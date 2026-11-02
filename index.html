@@ -1025,38 +1025,46 @@
     // ==========================================
     // 主應用程式元件
     // ==========================================
-    const STORAGE_KEY = 'winter_gratitude_wall_notes_v2';
+    const NOTES_STORAGE_KEY = 'winter_wall_notes_clean_v1';
+    const PROFILE_STORAGE_KEY = 'winter_wall_profile_clean_v1';
 
     function App() {
+      // 乾淨試用版本：預設為空卡片清單，可隨時載入 35 張範例卡片
       const [localDemoNotes, setLocalDemoNotes] = useState(() => {
         try {
-          const saved = localStorage.getItem(STORAGE_KEY);
-          if (saved) {
+          const saved = localStorage.getItem(NOTES_STORAGE_KEY);
+          if (saved !== null) {
             const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+            if (Array.isArray(parsed)) return parsed;
           }
         } catch (e) {}
-        return FULL_CLASS_35_NOTES.map((item, idx) => ({
-          ...item,
-          createdAt: Date.now() - idx * 180000
-        }));
+        return []; // 乾淨起點：初始為 0 張卡片！
       });
 
       useEffect(() => {
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(localDemoNotes));
+          localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(localDemoNotes));
         } catch (e) {}
       }, [localDemoNotes]);
 
-      // 使用者身分
-      const [studentProfile, setStudentProfile] = useState({
-        name: '小宇',
-        seatNumber: '01',
-        hasLoggedIn: true
+      // 乾淨身分認證：初次訪問提示輸入座號與暱稱
+      const [studentProfile, setStudentProfile] = useState(() => {
+        try {
+          const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed && parsed.name) return { ...parsed, hasLoggedIn: true };
+          }
+        } catch (e) {}
+        return {
+          name: '',
+          seatNumber: '',
+          hasLoggedIn: false
+        };
       });
       const [isEditingProfile, setIsEditingProfile] = useState(false);
-      const [tempName, setTempName] = useState('小宇');
-      const [tempSeat, setTempSeat] = useState('01');
+      const [tempName, setTempName] = useState('');
+      const [tempSeat, setTempSeat] = useState('');
 
       // 檢索、分類與排序
       const [searchKeyword, setSearchKeyword] = useState('');
@@ -1215,13 +1223,34 @@
           showToast('請輸入姓名或暱稱');
           return;
         }
-        setStudentProfile({
+        const profile = {
           name: trimmedName,
           seatNumber: tempSeat.trim(),
           hasLoggedIn: true
-        });
+        };
+        setStudentProfile(profile);
+        try {
+          localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+        } catch (e) {}
         setIsEditingProfile(false);
         showToast(`歡迎進入冬日感恩牆，${trimmedName}！`);
+      };
+
+      const handleClearAllNotes = () => {
+        setLocalDemoNotes([]);
+        try {
+          localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify([]));
+        } catch (e) {}
+        showToast('已將留言牆重設為完全空白！');
+      };
+
+      const handleLoadSampleNotes = () => {
+        const samples = FULL_CLASS_35_NOTES.map((item, idx) => ({
+          ...item,
+          createdAt: Date.now() - idx * 180000
+        }));
+        setLocalDemoNotes(samples);
+        showToast('已載入全班 35 張示範卡片！');
       };
 
       const handleCreateNote = (e) => {
@@ -1768,18 +1797,20 @@
                   匯出 CSV
                 </button>
                 <button
-                  onClick={() => {
-                    const initial = FULL_CLASS_35_NOTES.map((item, idx) => ({
-                      ...item,
-                      createdAt: Date.now() - idx * 180000
-                    }));
-                    setLocalDemoNotes(initial);
-                    showToast('已重設回預設 35 張全班卡片！');
-                  }}
+                  onClick={handleClearAllNotes}
+                  className="px-3 py-1 rounded-lg bg-[#8C3A3A] hover:bg-[#A34343] text-white border border-[#B84545] flex items-center gap-1"
+                  title="將留言牆重設為完全空白"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-white" />
+                  清空留言牆
+                </button>
+                <button
+                  onClick={handleLoadSampleNotes}
                   className="px-3 py-1 rounded-lg bg-[#264231] hover:bg-[#31543F] text-[#FAF7F2] border border-[#4A755B] flex items-center gap-1"
+                  title="載入 35 張全班範例祝福"
                 >
                   <Layers className="w-3.5 h-3.5 text-[#EAC882]" />
-                  重設卡片
+                  載入 35 張示範卡片
                 </button>
               </div>
             )}
@@ -1796,7 +1827,36 @@
               <span className="hidden sm:inline-block text-[#EAC882] font-serif">Merry Christmas</span>
             </div>
             {/* 模式 A：聚焦輪播舞台 */}
-            {viewMode === 'spotlight' && displayedNotes.length > 0 && (
+            {viewMode === 'spotlight' && (
+              displayedNotes.length === 0 ? (
+                <div className="my-12 sm:my-16 max-w-md mx-auto bg-[#16291F]/95 border-2 border-[#385A46] rounded-3xl p-6 sm:p-10 text-center shadow-2xl font-bold backdrop-blur-sm">
+                  <div className="w-16 h-16 rounded-full bg-[#1F3729] border-2 border-[#385A46] flex items-center justify-center mx-auto mb-4 text-[#D4B475] shadow-inner">
+                    <Play className="w-8 h-8 stroke-[2.25] text-[#D4B475]" />
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-serif font-extrabold text-[#FAF7F2] mb-2">
+                    目前尚無卡片可供輪播
+                  </h3>
+                  <p className="text-xs sm:text-sm font-bold text-[#C2D4C8] leading-relaxed mb-6">
+                    快來寫下第一張祝福卡片，或載入示範卡片體驗大螢幕輪播效果！
+                  </p>
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <button
+                      onClick={() => setIsComposerOpen(true)}
+                      className="w-full sm:w-auto px-6 py-3 rounded-full bg-[#C5A059] hover:bg-[#D1AE68] active:scale-95 text-[#122219] font-extrabold text-sm shadow-lg flex items-center justify-center gap-2"
+                    >
+                      <PlusCircle className="w-4 h-4 stroke-[2.5]" />
+                      <span>寫第一張祝福卡片</span>
+                    </button>
+                    <button
+                      onClick={handleLoadSampleNotes}
+                      className="w-full sm:w-auto px-4 py-2.5 rounded-full bg-[#1F3729] hover:bg-[#284534] border border-[#385A46] text-[#C2D4C8] hover:text-white font-extrabold text-xs flex items-center justify-center gap-1.5"
+                    >
+                      <Layers className="w-3.5 h-3.5 text-[#EAC882]" />
+                      <span>載入 35 張示範卡片</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
               <div className="space-y-6 sm:space-y-8">
                 <div className="bg-gradient-to-b from-[#1A3124]/95 to-[#122219]/95 border-2 border-[#385A46] rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-2xl relative overflow-hidden">
                   {/* 輪播進度條 */}
@@ -1943,12 +2003,40 @@
                   </div>
                 </div>
               </div>
-            )}
+            ))}
 
             {/* 模式 B：全部畫面呈現 (手機單欄清楚好讀，平板2~3欄，桌面4~5欄，大屏7欄) */}
             {viewMode === 'all' && (
               <>
-                {displayedNotes.length === 0 ? (
+                {localDemoNotes.length === 0 ? (
+                  <div className="my-12 sm:my-16 max-w-md mx-auto bg-[#16291F]/95 border-2 border-[#385A46] rounded-3xl p-6 sm:p-10 text-center shadow-2xl font-bold backdrop-blur-sm">
+                    <div className="w-16 h-16 rounded-full bg-[#1F3729] border-2 border-[#385A46] flex items-center justify-center mx-auto mb-4 text-[#D4B475] shadow-inner">
+                      <TreePine className="w-8 h-8 stroke-[2.25]" />
+                    </div>
+                    <h3 className="text-xl sm:text-2xl font-serif font-extrabold text-[#FAF7F2] mb-2">
+                      留言牆正等待第一張溫暖祝福
+                    </h3>
+                    <p className="text-xs sm:text-sm font-bold text-[#C2D4C8] leading-relaxed mb-6">
+                      在這個微涼的冬日裡，寫下一份真摯的感謝或祝福，送給陪伴你的同學與師長吧！
+                    </p>
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                      <button
+                        onClick={() => setIsComposerOpen(true)}
+                        className="w-full sm:w-auto px-6 py-3 rounded-full bg-[#C5A059] hover:bg-[#D1AE68] active:scale-95 text-[#122219] font-extrabold text-sm shadow-lg flex items-center justify-center gap-2"
+                      >
+                        <PlusCircle className="w-4 h-4 stroke-[2.5]" />
+                        <span>寫第一張祝福卡片</span>
+                      </button>
+                      <button
+                        onClick={handleLoadSampleNotes}
+                        className="w-full sm:w-auto px-4 py-2.5 rounded-full bg-[#1F3729] hover:bg-[#284534] border border-[#385A46] text-[#C2D4C8] hover:text-white font-extrabold text-xs flex items-center justify-center gap-1.5"
+                      >
+                        <Layers className="w-3.5 h-3.5 text-[#EAC882]" />
+                        <span>載入 35 張示範卡片</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : displayedNotes.length === 0 ? (
                   <div className="my-12 max-w-lg mx-auto bg-[#16291F]/95 border-2 border-[#2E4B3A] rounded-2xl p-6 sm:p-8 text-center shadow-xl font-bold">
                     <div className="w-12 h-12 rounded-full bg-[#1F3729] border-2 border-[#385A46] flex items-center justify-center mx-auto mb-3 text-[#D4B475]">
                       <Gift className="w-6 h-6 stroke-[2]" />
