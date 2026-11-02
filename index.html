@@ -1059,8 +1059,14 @@
       const [newlyCreatedId, setNewlyCreatedId] = useState(null);
       const [toastMessage, setToastMessage] = useState(null);
 
-      // 教師管理
-      const [isTeacherMode, setIsTeacherMode] = useState(false);
+      // 教師管理（前台介面預設關閉，僅透過專屬網址參數 ?admin=1225 開啟後台管理列）
+      const [isTeacherMode, setIsTeacherMode] = useState(() => {
+        try {
+          return new URLSearchParams(window.location.search).get('admin') === '1225';
+        } catch (e) {
+          return false;
+        }
+      });
       const [showTeacherModal, setShowTeacherModal] = useState(false);
       const [teacherPasscode, setTeacherPasscode] = useState('');
       const [deleteConfirmId, setDeleteConfirmId] = useState(null);
@@ -1561,28 +1567,6 @@
                   >
                     <Snowflake className="w-4 h-4 text-[#D4B475]" />
                     <span className="hidden xl:inline">{snowEnabled ? '微雪' : '無雪'}</span>
-                  </button>
-
-                  {/* 教師管理 */}
-                  <button
-                    onClick={() => {
-                      if (isTeacherMode) {
-                        setIsTeacherMode(false);
-                        showToast('已關閉教師模式');
-                      } else {
-                        setShowTeacherModal(true);
-                      }
-                    }}
-                    className={`p-2 sm:px-3 sm:py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 border transition min-h-[36px] min-w-[36px] justify-center ${
-                      isTeacherMode
-                        ? 'bg-[#8C3A3A] border-[#B25959] text-white'
-                        : 'bg-[#1A2F23] border-[#385A46] text-[#C2D4C8]'
-                    }`}
-                    title="教師管理模式"
-                    aria-label="教師模式"
-                  >
-                    <Shield className="w-4 h-4" />
-                    <span className="hidden xl:inline">{isTeacherMode ? '管理中' : '教師'}</span>
                   </button>
 
                   {/* 桌面端直接顯示發布按鈕 */}
