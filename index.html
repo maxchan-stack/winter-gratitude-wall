@@ -1149,13 +1149,23 @@
           }
 
           if (Array.isArray(remoteNotes)) {
-            setLocalDemoNotes((prev) => {
-              const remoteIds = new Set(remoteNotes.map((n) => n.id));
-              // 保留本地剛送出但雲端可能尚未及時入庫的卡片 (15秒安全窗口)
-              const localUnsynced = prev.filter((n) => !remoteIds.has(n.id) && Date.now() - (n.createdAt || 0) < 15000);
-              return [...localUnsynced, ...remoteNotes];
-            });
             setCloudStatus('connected');
+            if (remoteNotes.length > 0) {
+              setLocalDemoNotes((prev) => {
+                const map = new Map();
+                // 1. 載入雲端確認的卡片
+                for (const n of remoteNotes) {
+                  if (n && n.id) map.set(n.id, n);
+                }
+                // 2. 合併本地發布的卡片（避免雲端同步延遲時卡片閃爍或消失）
+                for (const n of prev) {
+                  if (n && n.id && !map.has(n.id)) {
+                    map.set(n.id, n);
+                  }
+                }
+                return Array.from(map.values()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+              });
+            }
           }
         } catch (e) {
           setCloudStatus('offline');
