@@ -454,45 +454,6 @@
       }
     };
 
-    // 預設 35 張全班資料
-    const FULL_CLASS_35_NOTES = [
-      { id: 'n1', to: '班導師 林老師', message: '謝謝老師這學期每天早上陪我們早自習，在我們班際比賽失利時請全班喝熱可可鼓勵我們，祝老師聖誕平安快樂！', from: '01號 小宇', theme: 'cream', shape: 'classic', icon: 'tree', category: '感謝師長', likes: 18, likedBy: [] },
-      { id: 'n2', to: '坐在隔壁的 子軒', message: '每次數學課我卡關的時候，你都很耐心地畫圖講解給我聽，謝謝你這個神隊友，祝我們期末考一起歐趴！', from: '02號 宥廷', theme: 'sage', shape: 'tag', icon: 'star', category: '同儕祝福', likes: 12, likedBy: [] },
-      { id: 'n3', to: '英文科 陳老師', message: '老師準備的西方聖誕文化小故事超有趣，讓我不再害怕開口說英文了！Merry Christmas!', from: '03號 語彤', theme: 'berry', shape: 'arch', icon: 'bell', category: '感謝師長', likes: 15, likedBy: [] },
-      { id: 'n4', to: '排球小隊的戰友們', message: '謝謝大家每天放學留下來練球，不管場上失誤幾次都會互相喊聲「沒事！下一球再來」，我們下學期一定能晉級！', from: '04號 冠宇', theme: 'oat', shape: 'stamp', icon: 'flame', category: '同儕祝福', likes: 21, likedBy: [] },
-      { id: 'n5', to: '溫暖的 宜蓁', message: '那天下大雨我忘記帶傘，謝謝妳二話不說陪我一起撐傘走到車站，心裡一直覺得很暖，祝妳聖誕節收到最棒的禮物！', from: '05號 品妍', theme: 'midnight', shape: 'bauble', icon: 'snow', category: '同儕祝福', likes: 19, likedBy: [] },
-      { id: 'n6', to: '國文科 張老師', message: '謝謝老師在週記本上總是寫下滿滿的溫暖回覆，在我迷惘的時候給我很多力量，祝老師冬日順心！', from: '06號 承恩', theme: 'cream', shape: 'plaque', icon: 'coffee', category: '感謝師長', likes: 14, likedBy: [] },
-      { id: 'n7', to: '化學實驗室第四組', message: '雖然我們每次滴定實驗都緊張到手抖，但有你們一起分工合作、洗燒杯，實驗課變成每週最期待的時光！', from: '07號 柏翰', theme: 'sage', shape: 'classic', icon: 'gift', category: '同儕祝福', likes: 11, likedBy: [] },
-      { id: 'n8', to: '默默付出衛生股長 采潔', message: '謝謝妳每天提醒大家做資源回收跟打掃，讓我們的教室永遠這麼乾淨舒服，辛苦妳了！', from: '溫暖的匿名同學', theme: 'berry', shape: 'tag', icon: 'heart', category: '同儕祝福', likes: 16, likedBy: [] },
-      { id: 'n9', to: '熱血的體育老師', message: '謝謝老師在大隊接力前幫我們特訓傳接棒技巧，還陪我們一起在操場吶喊，有您真好！', from: '09號 俊傑', theme: 'oat', shape: 'arch', icon: 'flame', category: '感謝師長', likes: 13, likedBy: [] },
-      { id: 'n10', to: '合唱比賽伴奏 詩涵', message: '謝謝妳為了班際合唱比賽每天中午留在音樂教室練琴，有妳穩定的琴聲，全班唱起歌來特別有安全感！', from: '10號 詠晴', theme: 'midnight', shape: 'stamp', icon: 'bell', category: '同儕祝福', likes: 22, likedBy: [] },
-      { id: 'n11', to: '全班 35 位同學', message: '很幸運高中分班能跟大家在同一個教室相遇，願我們在歲末冬日都平平安安，明年繼續創造更多美好回憶！', from: '11號 班長 睿澤', theme: 'cream', shape: 'bauble', icon: 'tree', category: '歲末祈願', likes: 28, likedBy: [] },
-      { id: 'n12', to: '歷史科 吳老師', message: '老師講歷史故事就像在看電影一樣精彩，謝謝老師總是鼓勵我們獨立思考！聖誕快樂！', from: '12號 芷瑜', theme: 'sage', shape: 'plaque', icon: 'star', category: '感謝師長', likes: 10, likedBy: [] },
-      { id: 'n13', to: '園遊會擺攤美宣組', message: '謝謝美宣組同學熬夜畫出超好看的聖誕看板，讓我們的攤位成為全校最吸睛的焦點！', from: '13號 浩然', theme: 'berry', shape: 'classic', icon: 'gift', category: '同儕祝福', likes: 15, likedBy: [] },
-      { id: 'n14', to: '借我立可帶的 宇軒', message: '謝謝你這學期大概借了我十次文具都笑笑的沒有生氣，下次換我請你喝熱奶茶！', from: '14號 哲瑋', theme: 'oat', shape: 'tag', icon: 'coffee', category: '同儕祝福', likes: 9, likedBy: [] },
-      { id: 'n15', to: '給三個月後的自己', message: '謝謝這學期沒有放棄努力的自己，希望冬天的累積都能在明年春天開花結果，加油！', from: '15號 心怡', theme: 'midnight', shape: 'arch', icon: 'snow', category: '給未來的自己', likes: 17, likedBy: [] },
-      { id: 'n16', to: '學藝股長 欣妤', message: '每次抬頭看到後面黑板溫馨的節慶插畫，心情就會瞬間變好，謝謝妳用畫筆溫暖了整間教室！', from: '16號 羽柔', theme: 'cream', shape: 'stamp', icon: 'heart', category: '同儕祝福', likes: 20, likedBy: [] },
-      { id: 'n17', to: '物理科 趙老師', message: '謝謝老師下課時間總是很有耐心地留下來幫我們解題，祝老師聖誕佳節愉快、身體健康！', from: '17號 彥廷', theme: 'sage', shape: 'bauble', icon: 'tree', category: '感謝師長', likes: 12, likedBy: [] },
-      { id: 'n18', to: '一起留晚自習的夥伴', message: '冬天的晚上雖然很冷，但抬頭看到身邊還有你們一起安靜讀書的身影，就覺得一點都不孤單了！', from: '18號 庭瑋', theme: 'berry', shape: 'plaque', icon: 'flame', category: '同儕祝福', likes: 18, likedBy: [] },
-      { id: 'n19', to: '熱心助人的 宗翰', message: '那天我不小心在樓梯扭傷腳，謝謝你主動幫我揹書包還扶我去保健室，真的超級感謝你！', from: '溫暖的匿名同學', theme: 'oat', shape: 'classic', icon: 'star', category: '同儕祝福', likes: 24, likedBy: [] },
-      { id: 'n20', to: '輔導室 雅筑老師', message: '謝謝老師總是溫柔地傾聽我的煩惱，每次走出輔導室都覺得心裡充滿暖陽，祝老師聖誕快樂！', from: '20號 姿妤', theme: 'midnight', shape: 'tag', icon: 'coffee', category: '感謝師長', likes: 16, likedBy: [] },
-      { id: 'n21', to: '總務股長 威廷', message: '收班費、訂便當、買班服都靠你一手包辦，帳目永遠清清楚楚，謝謝你為班上做這麼多事！', from: '21號 凱文', theme: 'cream', shape: 'arch', icon: 'gift', category: '同儕祝福', likes: 13, likedBy: [] },
-      { id: 'n22', to: '午餐抬餐桶的小天使們', message: '謝謝每天中午固定去抬熱湯跟飯菜的同學，不管天氣多冷都讓我們有熱騰騰的午餐吃！', from: '22號 佳穎', theme: 'sage', shape: 'stamp', icon: 'heart', category: '同儕祝福', likes: 25, likedBy: [] },
-      { id: 'n23', to: '生物科 許老師', message: '謝謝老師帶我們去校園觀察植物生態，讓我們發現原來冬天的校園也充滿生機！', from: '23號 睿恩', theme: 'berry', shape: 'bauble', icon: 'tree', category: '感謝師長', likes: 11, likedBy: [] },
-      { id: 'n24', to: '愛笑的 曼婷', message: '妳的笑聲真的很有感染力，每次班上氣氛緊繃的時候，只要聽到妳開朗的笑聲大家就放鬆下來了！', from: '24號 筱涵', theme: 'oat', shape: 'plaque', icon: 'bell', category: '同儕祝福', likes: 14, likedBy: [] },
-      { id: 'n25', to: '資訊股長 秉澄', message: '每次教室投影機或電腦出問題，你三秒鐘就能修好，簡直是全班跟老師們的救星！', from: '25號 鈞宥', theme: 'midnight', shape: 'classic', icon: 'star', category: '同儕祝福', likes: 19, likedBy: [] },
-      { id: 'n26', to: '地理科 鄭老師', message: '謝謝老師帶我們認識世界各地的北歐極光與冬日風景，希望有一天我也能親眼去看極光！', from: '26號 晨曦', theme: 'cream', shape: 'tag', icon: 'snow', category: '感謝師長', likes: 12, likedBy: [] },
-      { id: 'n27', to: '英語話劇組的大家', message: '從寫劇本、做紙箱道具到上台演出，謝謝大家沒有人喊累，一起完成了最棒的聖誕短劇！', from: '27號 靖雯', theme: 'sage', shape: 'arch', icon: 'gift', category: '同儕祝福', likes: 17, likedBy: [] },
-      { id: 'n28', to: '每天最早到校開門的 紹齊', message: '謝謝你每天早上六點五十分就來開教室門窗跟電燈，讓大家一進教室就有明亮溫暖的空間！', from: '28號 博鈞', theme: 'berry', shape: 'stamp', icon: 'coffee', category: '同儕祝福', likes: 23, likedBy: [] },
-      { id: 'n29', to: '音樂科 蘇老師', message: '謝謝老師在12月教我們唱這麼多溫暖的聖誕歌曲，讓每週的音樂課都像一場小型音樂會！', from: '29號 樂樂', theme: 'oat', shape: 'bauble', icon: 'bell', category: '感謝師長', likes: 15, likedBy: [] },
-      { id: 'n30', to: '熱舞社的同班夥伴 薇安', message: '看著妳兼顧社團成發跟課業還是這麼努力，真的激勵了我很多，聖誕成發一定大成功！', from: '30號 巧恩', theme: 'midnight', shape: 'plaque', icon: 'flame', category: '同儕祝福', likes: 16, likedBy: [] },
-      { id: 'n31', to: '公民科 黃老師', message: '謝謝老師總是用溫和理性的方式帶我們討論時事，讓我們學會同理與尊重不同的聲音！', from: '31號 宥辰', theme: 'cream', shape: 'classic', icon: 'heart', category: '感謝師長', likes: 13, likedBy: [] },
-      { id: 'n32', to: '幫我撿起掉落筆記的同學', message: '上週在走廊不小心散落一地講義，謝謝好幾位同學馬上蹲下來幫我撿，我們班真的超有愛！', from: '32號 雅婷', theme: 'sage', shape: 'tag', icon: 'star', category: '同儕祝福', likes: 18, likedBy: [] },
-      { id: 'n33', to: '正在為夢想努力的每個人', message: '不管這學期過得順利或有些小挫折，都想跟大家說一聲辛苦了，願新的一年每個人都能心想事成！', from: '33號 翔宇', theme: 'berry', shape: 'arch', icon: 'tree', category: '歲末祈願', likes: 21, likedBy: [] },
-      { id: 'n34', to: '親愛的未來自己', message: '保持善良、保持好奇心，就算遇到寒冬也要記得心裡那盞溫暖的小燈，聖誕快樂！', from: '34號 語嫣', theme: 'oat', shape: 'stamp', icon: 'snow', category: '給未來的自己', likes: 14, likedBy: [] },
-      { id: 'n35', to: '我們最溫暖的班級與老師', message: '35個人、35顆真心，謝謝大家把這間教室變成第二個家。祝全班聖誕快樂、平安喜樂！', from: '35號 副班長 哲瀚', theme: 'midnight', shape: 'bauble', icon: 'gift', category: '歲末祈願', likes: 32, likedBy: [] }
-    ];
-
     // ==========================================
     // 造型卡片本體元件 (跨裝置自適應內距與文字排版)
     // ==========================================
@@ -1025,11 +986,11 @@
     // ==========================================
     // 主應用程式元件
     // ==========================================
-    const NOTES_STORAGE_KEY = 'winter_wall_notes_clean_v1';
-    const PROFILE_STORAGE_KEY = 'winter_wall_profile_clean_v1';
+    const NOTES_STORAGE_KEY = 'winter_wall_notes_pure_v2';
+    const PROFILE_STORAGE_KEY = 'winter_wall_profile_pure_v2';
 
     function App() {
-      // 乾淨試用版本：預設為空卡片清單，可隨時載入 35 張範例卡片
+      // 純淨空白模式：預設 0 筆卡片
       const [localDemoNotes, setLocalDemoNotes] = useState(() => {
         try {
           const saved = localStorage.getItem(NOTES_STORAGE_KEY);
@@ -1242,15 +1203,6 @@
           localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify([]));
         } catch (e) {}
         showToast('已將留言牆重設為完全空白！');
-      };
-
-      const handleLoadSampleNotes = () => {
-        const samples = FULL_CLASS_35_NOTES.map((item, idx) => ({
-          ...item,
-          createdAt: Date.now() - idx * 180000
-        }));
-        setLocalDemoNotes(samples);
-        showToast('已載入全班 35 張示範卡片！');
       };
 
       const handleCreateNote = (e) => {
@@ -1804,14 +1756,6 @@
                   <Trash2 className="w-3.5 h-3.5 text-white" />
                   清空留言牆
                 </button>
-                <button
-                  onClick={handleLoadSampleNotes}
-                  className="px-3 py-1 rounded-lg bg-[#264231] hover:bg-[#31543F] text-[#FAF7F2] border border-[#4A755B] flex items-center gap-1"
-                  title="載入 35 張全班範例祝福"
-                >
-                  <Layers className="w-3.5 h-3.5 text-[#EAC882]" />
-                  載入 35 張示範卡片
-                </button>
               </div>
             )}
           </header>
@@ -1837,22 +1781,15 @@
                     目前尚無卡片可供輪播
                   </h3>
                   <p className="text-xs sm:text-sm font-bold text-[#C2D4C8] leading-relaxed mb-6">
-                    快來寫下第一張祝福卡片，或載入示範卡片體驗大螢幕輪播效果！
+                    快來寫下第一張祝福卡片，開啟大螢幕輪播展示！
                   </p>
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <div className="flex justify-center">
                     <button
                       onClick={() => setIsComposerOpen(true)}
                       className="w-full sm:w-auto px-6 py-3 rounded-full bg-[#C5A059] hover:bg-[#D1AE68] active:scale-95 text-[#122219] font-extrabold text-sm shadow-lg flex items-center justify-center gap-2"
                     >
                       <PlusCircle className="w-4 h-4 stroke-[2.5]" />
                       <span>寫第一張祝福卡片</span>
-                    </button>
-                    <button
-                      onClick={handleLoadSampleNotes}
-                      className="w-full sm:w-auto px-4 py-2.5 rounded-full bg-[#1F3729] hover:bg-[#284534] border border-[#385A46] text-[#C2D4C8] hover:text-white font-extrabold text-xs flex items-center justify-center gap-1.5"
-                    >
-                      <Layers className="w-3.5 h-3.5 text-[#EAC882]" />
-                      <span>載入 35 張示範卡片</span>
                     </button>
                   </div>
                 </div>
@@ -2019,20 +1956,13 @@
                     <p className="text-xs sm:text-sm font-bold text-[#C2D4C8] leading-relaxed mb-6">
                       在這個微涼的冬日裡，寫下一份真摯的感謝或祝福，送給陪伴你的同學與師長吧！
                     </p>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <div className="flex justify-center">
                       <button
                         onClick={() => setIsComposerOpen(true)}
                         className="w-full sm:w-auto px-6 py-3 rounded-full bg-[#C5A059] hover:bg-[#D1AE68] active:scale-95 text-[#122219] font-extrabold text-sm shadow-lg flex items-center justify-center gap-2"
                       >
                         <PlusCircle className="w-4 h-4 stroke-[2.5]" />
                         <span>寫第一張祝福卡片</span>
-                      </button>
-                      <button
-                        onClick={handleLoadSampleNotes}
-                        className="w-full sm:w-auto px-4 py-2.5 rounded-full bg-[#1F3729] hover:bg-[#284534] border border-[#385A46] text-[#C2D4C8] hover:text-white font-extrabold text-xs flex items-center justify-center gap-1.5"
-                      >
-                        <Layers className="w-3.5 h-3.5 text-[#EAC882]" />
-                        <span>載入 35 張示範卡片</span>
                       </button>
                     </div>
                   </div>
