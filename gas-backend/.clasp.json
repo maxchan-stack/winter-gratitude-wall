@@ -1,0 +1,17 @@
+{
+  "scriptId": "1P5cm0QplZr7ikfJDtwN6P9WwcGsebYuQk2Bru6gSPU-ezccNHDmtC_3_",
+  "rootDir": "",
+  "parentId": "1D7VUoSJBYEX1tELiZnWAlB2ktJhBBk_YKk0xMp-rwb4",
+  "scriptExtensions": [
+    ".js",
+    ".gs"
+  ],
+  "htmlExtensions": [
+    ".html"
+  ],
+  "jsonExtensions": [
+    ".json"
+  ],
+  "filePushOrder": [],
+  "skipSubdirectories": false
+}

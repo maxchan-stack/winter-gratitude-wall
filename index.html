@@ -277,6 +277,13 @@
         <path d="M22 2 11 13" />
       </>
     );
+    const ExternalLink = createIcon(
+      <>
+        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+        <polyline points="15 3 21 3 21 9" />
+        <line x1="10" x2="21" y1="14" y2="3" />
+      </>
+    );
     const Search = createIcon(
       <>
         <circle cx="11" cy="11" r="8" />
@@ -984,6 +991,12 @@
     };
 
     // ==========================================
+    // Google 試算表雲端集中資料庫設定
+    // ==========================================
+    const SPREADSHEET_ID = '1D7VUoSJBYEX1tELiZnWAlB2ktJhBBk_YKk0xMp-rwb4';
+    const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbz0fb61Z7FpBuc7eJFL8Py6vtzr06lYwE2BEgFkSfWkb8nBARk_fou8PkJ2AuuxqL_r/exec';
+
+    // ==========================================
     // 主應用程式元件
     // ==========================================
     const NOTES_STORAGE_KEY = 'winter_wall_notes_pure_v2';
@@ -1081,6 +1094,80 @@
           setToastMessage((prev) => (prev === msg ? null : prev));
         }, 3000);
       }, []);
+
+      // 雲端同步狀態 (Google 試算表即時後台)
+      const [cloudStatus, setCloudStatus] = useState('syncing'); // 'connected' | 'syncing' | 'offline'
+
+      // 雙通道雲端抓取 (GAS Web App API 優先，gviz 備援直讀)
+      const syncNotesFromCloud = useCallback(async () => {
+        try {
+          let remoteNotes = null;
+
+          // 通道 1：GAS Web App API
+          try {
+            const res = await fetch(`${GAS_API_URL}?action=getNotes`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.status === 'success' && Array.isArray(data.notes)) {
+                remoteNotes = data.notes;
+              }
+            }
+          } catch (apiErr) {}
+
+          // 通道 2：Google Visualization API (Direct Sheet Read)
+          if (!remoteNotes) {
+            try {
+              const gvizUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=%E5%8D%A1%E7%89%87%E5%88%97%E8%A1%A8`;
+              const gvizRes = await fetch(gvizUrl);
+              const gvizText = await gvizRes.text();
+              const match = gvizText.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/);
+              if (match) {
+                const gvizObj = JSON.parse(match[1]);
+                const rows = (gvizObj.table && gvizObj.table.rows) || [];
+                remoteNotes = [];
+                for (const r of rows) {
+                  const c = r.c;
+                  if (!c) continue;
+                  const id = c[0] ? String(c[0].v || '') : '';
+                  const to = c[1] ? String(c[1].v || '') : '';
+                  const msg = c[2] ? String(c[2].v || '') : '';
+                  const from = c[3] ? String(c[3].v || '') : '';
+                  const theme = c[4] ? String(c[4].v || 'cream') : 'cream';
+                  const shape = c[5] ? String(c[5].v || 'classic') : 'classic';
+                  const icon = c[6] ? String(c[6].v || 'tree') : 'tree';
+                  const category = c[7] ? String(c[7].v || '同儕祝福') : '同儕祝福';
+                  const createdAt = c[8] ? Number(c[8].v) || Date.now() : Date.now();
+                  const likes = c[9] ? Number(c[9].v) || 0 : 0;
+                  const status = c[10] ? String(c[10].v || '').trim().toUpperCase() : '';
+                  if (status === 'DELETED') continue;
+                  if (id && msg) {
+                    remoteNotes.push({ id, to, message: msg, from, theme, shape, icon, category, createdAt, likes, likedBy: [] });
+                  }
+                }
+              }
+            } catch (gvizErr) {}
+          }
+
+          if (Array.isArray(remoteNotes)) {
+            setLocalDemoNotes((prev) => {
+              const remoteIds = new Set(remoteNotes.map((n) => n.id));
+              // 保留本地剛送出但雲端可能尚未及時入庫的卡片 (15秒安全窗口)
+              const localUnsynced = prev.filter((n) => !remoteIds.has(n.id) && Date.now() - (n.createdAt || 0) < 15000);
+              return [...localUnsynced, ...remoteNotes];
+            });
+            setCloudStatus('connected');
+          }
+        } catch (e) {
+          setCloudStatus('offline');
+        }
+      }, []);
+
+      // 初次載入與每 5 秒定期背景輪詢，確保大螢幕與所有學生裝置即時同步
+      useEffect(() => {
+        syncNotesFromCloud();
+        const timer = setInterval(syncNotesFromCloud, 5000);
+        return () => clearInterval(timer);
+      }, [syncNotesFromCloud]);
 
       // 篩選與排序邏輯
       const displayedNotes = useMemo(() => {
@@ -1208,6 +1295,12 @@
         try {
           localStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify([]));
         } catch (e) {}
+        // 非同步通知 Google 試算表清空
+        (async () => {
+          try {
+            await fetch(`${GAS_API_URL}?action=clearAllNotes&passcode=1225`, { mode: 'no-cors' });
+          } catch (e) {}
+        })();
         showToast('已將留言牆重設為完全空白！');
       };
 
@@ -1241,11 +1334,28 @@
             createdAt: Date.now()
           };
 
+          // 本地樂觀更新
           setLocalDemoNotes((prev) => [newNote, ...prev]);
           setToField('');
           setMessageField('');
           setIsAnonymous(false);
           setIsComposerOpen(false);
+
+          // 非同步傳輸至 Google 試算表雲端資料庫
+          (async () => {
+            try {
+              await fetch(GAS_API_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: 'createNote', note: newNote })
+              });
+            } catch (postErr) {
+              try {
+                await fetch(`${GAS_API_URL}?action=create&data=${encodeURIComponent(JSON.stringify(newNote))}`, { mode: 'no-cors' });
+              } catch (getErr) {}
+            }
+          })();
 
           const createdId = newNote.id;
           setNewlyCreatedId(createdId);
@@ -1278,6 +1388,13 @@
             };
           })
         );
+
+        // 非同步通知 Google 試算表更新愛心數
+        (async () => {
+          try {
+            await fetch(`${GAS_API_URL}?action=like&id=${encodeURIComponent(note.id)}`, { mode: 'no-cors' });
+          } catch (e) {}
+        })();
       };
 
       const handleCopyCardText = (note) => {
@@ -1291,8 +1408,17 @@
 
       const handleConfirmDelete = () => {
         if (!deleteConfirmId) return;
-        setLocalDemoNotes((prev) => prev.filter((item) => item.id !== deleteConfirmId));
+        const targetId = deleteConfirmId;
+        setLocalDemoNotes((prev) => prev.filter((item) => item.id !== targetId));
         setDeleteConfirmId(null);
+
+        // 非同步通知 Google 試算表刪除
+        (async () => {
+          try {
+            await fetch(`${GAS_API_URL}?action=delete&id=${encodeURIComponent(targetId)}&passcode=1225`, { mode: 'no-cors' });
+          } catch (e) {}
+        })();
+
         showToast('已從留言牆移除該張卡片');
       };
 
@@ -1528,6 +1654,15 @@
 
                 {/* 右側工具操作按鈕 */}
                 <div className="flex items-center gap-1.5 shrink-0">
+                  {/* 雲端同步狀態燈 */}
+                  <div
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#16291F] border border-[#2E4837] text-[11px] font-extrabold text-[#95B5A1]"
+                    title="已連線至 Google 試算表雲端集中資料庫"
+                  >
+                    <span className={`w-2 h-2 rounded-full ${cloudStatus === 'offline' ? 'bg-[#D9534F]' : 'bg-[#4EAA78] animate-pulse'}`} />
+                    <span className="hidden sm:inline">{cloudStatus === 'offline' ? '離線模式' : '雲端同步'}</span>
+                  </div>
+
                   {/* 檢索切換按鈕 */}
                   <button
                     onClick={() => setShowSearchBar(!showSearchBar)}
@@ -1725,6 +1860,16 @@
             {isTeacherMode && (
               <div className="bg-[#1B3022] border-t border-[#385A46] px-4 py-2 flex flex-wrap items-center justify-center gap-2 text-xs font-extrabold">
                 <span className="text-[#EAC882]">★ 教師管理模式：</span>
+                <a
+                  href={`https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1 rounded-lg bg-[#22442E] hover:bg-[#2C573B] text-[#FAF7F2] border border-[#3E7250] flex items-center gap-1"
+                  title="開啟 Google 試算表即時後台"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-[#EAC882]" />
+                  開啟 Google 試算表後台
+                </a>
                 <button
                   onClick={handleExportCSV}
                   className="px-3 py-1 rounded-lg bg-[#264231] hover:bg-[#31543F] text-[#FAF7F2] border border-[#4A755B] flex items-center gap-1"
