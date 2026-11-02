@@ -478,13 +478,13 @@ const ShapedNoteCard = ({
       )}
 
       {shape === 'stamp' && (
-        <div className="absolute top-0.5 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+        <div className="absolute top-0.5 left-1/2 -translate-x-1/2 z-20 pointer-events-none whitespace-nowrap">
           <span
             className={`px-2 py-0.5 rounded-sm bg-[#8C3A3A] text-[#FAF7F2] ${
-              isCompact ? 'text-[9px]' : 'text-[11px]'
-            } tracking-widest uppercase font-extrabold shadow-sm`}
+              isCompact ? 'text-[8px]' : 'text-[9px] sm:text-[10px]'
+            } tracking-wider uppercase font-extrabold shadow-sm whitespace-nowrap inline-flex items-center justify-center`}
           >
-            {isCompact ? 'DEC 25' : 'WINTER POST • 25'}
+            {isCompact ? 'DEC 25' : 'WINTER\u00A0POST\u00A0•\u00A025'}
           </span>
         </div>
       )}
