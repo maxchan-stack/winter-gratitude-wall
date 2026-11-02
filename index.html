@@ -1,0 +1,2595 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <title>冬日感恩與祝福留言牆 - 跨裝置響應旗艦版</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans TC"', 'system-ui', '-apple-system', 'sans-serif'],
+            serif: ['"Noto Serif TC"', 'Georgia', 'serif']
+          },
+          keyframes: {
+            heartPop: {
+              '0%': { transform: 'scale(1)' },
+              '50%': { transform: 'scale(1.35)' },
+              '100%': { transform: 'scale(1)' }
+            },
+            floatUp: {
+              '0%': { transform: 'translateY(0) scale(0.8)', opacity: '1' },
+              '100%': { transform: 'translateY(-24px) scale(1.2)', opacity: '0' }
+            },
+            toastIn: {
+              '0%': { transform: 'translateY(16px)', opacity: '0' },
+              '100%': { transform: 'translateY(0)', opacity: '1' }
+            }
+          },
+          animation: {
+            heartPop: 'heartPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+            floatUp: 'floatUp 0.6s ease-out forwards',
+            toastIn: 'toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards'
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Google Fonts: 繁體中文標準字體 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@600;700;900&display=swap" rel="stylesheet">
+
+  <!-- React 18 & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Babel Standalone (JSX 瀏覽器端渲染) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    html {
+      scroll-behavior: smooth;
+      -webkit-tap-highlight-color: transparent;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f1e16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2a4434;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #c5a059;
+    }
+    /* 隱藏行動端橫向滾動條但保持滾動能力 */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-[#0F1E16] text-[#FAF7F2] antialiased selection:bg-[#C5A059]/30">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef, useCallback } = React;
+
+    // ==========================================
+    // 向量圖示元件庫 (標準 24x24 SVG，維持視覺語意一致)
+    // ==========================================
+    const createIcon = (svgChildren) => ({ className = 'w-5 h-5', ...props }) => (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+        {...props}
+      >
+        {svgChildren}
+      </svg>
+    );
+
+    const TreePine = createIcon(
+      <>
+        <path d="m17 14 3 3.3a1 1 0 0 1-.7 1.7H4.7a1 1 0 0 1-.7-1.7L7 14h-.3a1 1 0 0 1-.7-1.7L9 9h-.2a1 1 0 0 1-.8-1.7L12 3l4 4.3a1 1 0 0 1-.8 1.7H15l3 3.3a1 1 0 0 1-.7 1.7H17z" />
+        <path d="M12 22v-3" />
+      </>
+    );
+    const Star = createIcon(
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    );
+    const Gift = createIcon(
+      <>
+        <polyline points="20 12 20 22 4 22 4 12" />
+        <rect width="20" height="5" x="2" y="7" />
+        <line x1="12" x2="12" y1="22" y2="7" />
+        <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+        <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+      </>
+    );
+    const Snowflake = createIcon(
+      <>
+        <line x1="2" x2="22" y1="12" y2="12" />
+        <line x1="12" x2="12" y1="2" y2="22" />
+        <path d="m20 16-4-4 4-4" />
+        <path d="m4 8 4 4-4 4" />
+        <path d="m16 4-4 4-4-4" />
+        <path d="m8 20 4-4 4 4" />
+      </>
+    );
+    const Coffee = createIcon(
+      <>
+        <path d="M10 2v2" />
+        <path d="M14 2v2" />
+        <path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h12Z" />
+        <path d="M6 2v2" />
+        <path d="M17 8h1a4 4 0 0 1 0 8h-1" />
+      </>
+    );
+    const Bell = createIcon(
+      <>
+        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+      </>
+    );
+    const Flame = createIcon(
+      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+    );
+    const Heart = createIcon(
+      <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+    );
+    const Sparkles = createIcon(
+      <>
+        <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+        <path d="M5 3v4" />
+        <path d="M19 17v4" />
+        <path d="M3 5h4" />
+        <path d="M17 19h4" />
+      </>
+    );
+    const User = createIcon(
+      <>
+        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+        <circle cx="12" cy="7" r="4" />
+      </>
+    );
+    const Trash2 = createIcon(
+      <>
+        <path d="M3 6h18" />
+        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+        <line x1="10" x2="10" y1="11" y2="17" />
+        <line x1="14" x2="14" y1="11" y2="17" />
+      </>
+    );
+    const Download = createIcon(
+      <>
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="7 10 12 15 17 10" />
+        <line x1="12" x2="12" y1="15" y2="3" />
+      </>
+    );
+    const Shield = createIcon(
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+    );
+    const Edit3 = createIcon(
+      <>
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+      </>
+    );
+    const Check = createIcon(
+      <polyline points="20 6 9 17 4 12" />
+    );
+    const X = createIcon(
+      <>
+        <path d="M18 6 6 18" />
+        <path d="m6 6 12 12" />
+      </>
+    );
+    const PlusCircle = createIcon(
+      <>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M8 12h8" />
+        <path d="M12 8v8" />
+      </>
+    );
+    const LayoutGrid = createIcon(
+      <>
+        <rect width="7" height="7" x="3" y="3" rx="1" />
+        <rect width="7" height="7" x="14" y="3" rx="1" />
+        <rect width="7" height="7" x="14" y="14" rx="1" />
+        <rect width="7" height="7" x="3" y="14" rx="1" />
+      </>
+    );
+    const Grid = createIcon(
+      <>
+        <rect width="18" height="18" x="3" y="3" rx="2" />
+        <path d="M3 9h18" />
+        <path d="M3 15h18" />
+        <path d="M9 3v18" />
+        <path d="M15 3v18" />
+      </>
+    );
+    const Play = createIcon(
+      <polygon points="5 3 19 12 5 21 5 3" />
+    );
+    const Pause = createIcon(
+      <>
+        <rect x="6" y="4" width="4" height="16" />
+        <rect x="14" y="4" width="4" height="16" />
+      </>
+    );
+    const ChevronLeft = createIcon(
+      <path d="m15 18-6-6 6-6" />
+    );
+    const ChevronRight = createIcon(
+      <path d="m9 18 6-6-6-6" />
+    );
+    const Layers = createIcon(
+      <>
+        <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" />
+        <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65" />
+        <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" />
+      </>
+    );
+    const Eye = createIcon(
+      <>
+        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+        <circle cx="12" cy="12" r="3" />
+      </>
+    );
+    const EyeOff = createIcon(
+      <>
+        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+        <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+        <line x1="2" x2="22" y1="2" y2="22" />
+      </>
+    );
+    const Send = createIcon(
+      <>
+        <path d="m22 2-7 20-4-9-9-4Z" />
+        <path d="M22 2 11 13" />
+      </>
+    );
+    const Search = createIcon(
+      <>
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.3-4.3" />
+      </>
+    );
+    const Maximize2 = createIcon(
+      <>
+        <polyline points="15 3 21 3 21 9" />
+        <polyline points="9 21 3 21 3 15" />
+        <line x1="21" x2="14" y1="3" y2="10" />
+        <line x1="3" x2="10" y1="21" y2="14" />
+      </>
+    );
+    const Minimize2 = createIcon(
+      <>
+        <polyline points="4 14 10 14 10 20" />
+        <polyline points="20 10 14 10 14 4" />
+        <line x1="14" x2="21" y1="10" y2="3" />
+        <line x1="3" x2="10" y1="21" y2="14" />
+      </>
+    );
+    const Copy = createIcon(
+      <>
+        <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+      </>
+    );
+
+    // ==========================================
+    // 視覺與主題常數設定
+    // ==========================================
+    const CARD_THEMES = [
+      {
+        id: 'cream',
+        name: '羊皮暖白',
+        bg: 'bg-[#FAF7F2]',
+        border: 'border-[#E6DFD3]',
+        text: 'text-[#141C18]',
+        subtext: 'text-[#3A443E]',
+        accent: 'text-[#A67C2E]',
+        badgeBg: 'bg-[#EDE5D8]',
+        previewBg: '#FAF7F2',
+        borderHex: '#D5CBB8',
+        innerHex: '#E2D9C8'
+      },
+      {
+        id: 'sage',
+        name: '靜謐鼠尾草',
+        bg: 'bg-[#F0F4F1]',
+        border: 'border-[#D5E0D7]',
+        text: 'text-[#112016]',
+        subtext: 'text-[#2F4636]',
+        accent: 'text-[#2D5237]',
+        badgeBg: 'bg-[#DCE8DF]',
+        previewBg: '#E2EBE4',
+        borderHex: '#B8CCBD',
+        innerHex: '#CFE0D3'
+      },
+      {
+        id: 'berry',
+        name: '微醺莓果粉',
+        bg: 'bg-[#FBF5F5]',
+        border: 'border-[#EAD8D8]',
+        text: 'text-[#2B1414]',
+        subtext: 'text-[#593636]',
+        accent: 'text-[#8C2D2D]',
+        badgeBg: 'bg-[#F2DFDF]',
+        previewBg: '#F3E5E5',
+        borderHex: '#DABABA',
+        innerHex: '#EBD3D3'
+      },
+      {
+        id: 'oat',
+        name: '亞麻燕麥金',
+        bg: 'bg-[#F7F3EB]',
+        border: 'border-[#E5DEC9]',
+        text: 'text-[#241E14]',
+        subtext: 'text-[#4F4634]',
+        accent: 'text-[#966F22]',
+        badgeBg: 'bg-[#EAE0CA]',
+        previewBg: '#EDE5D5',
+        borderHex: '#CFC3A4',
+        innerHex: '#E2D7BE'
+      },
+      {
+        id: 'midnight',
+        name: '深邃松林夜',
+        bg: 'bg-[#192B20]',
+        border: 'border-[#2C4736]',
+        text: 'text-[#FFFFFF]',
+        subtext: 'text-[#D0E0D5]',
+        accent: 'text-[#EAC882]',
+        badgeBg: 'bg-[#264231]',
+        previewBg: '#192B20',
+        borderHex: '#3D634B',
+        innerHex: '#2B4A37'
+      }
+    ];
+
+    const CARD_SHAPES = [
+      { id: 'classic', name: '經典信箋', desc: '溫潤雙線內框與黃銅圖釘' },
+      { id: 'tag', name: '禮物吊牌', desc: '斜切角造型與金色掛繩孔' },
+      { id: 'arch', name: '古典拱窗', desc: '圓拱窗框與伯利恆之星' },
+      { id: 'stamp', name: '冬日郵票', desc: '齒孔邊框與北歐復古郵戳' },
+      { id: 'bauble', name: '聖誕圓球', desc: '圓潤吊飾輪廓與金屬掛環' },
+      { id: 'plaque', name: '祈願木牌', desc: '北歐木屋斜頂與祈願繩結' }
+    ];
+
+    const CARD_ICONS = [
+      { id: 'tree', name: '冬日松樹', icon: TreePine },
+      { id: 'star', name: '伯利恆星', icon: Star },
+      { id: 'gift', name: '溫暖心意', icon: Gift },
+      { id: 'snow', name: '靜謐初雪', icon: Snowflake },
+      { id: 'coffee', name: '熱可可', icon: Coffee },
+      { id: 'bell', name: '平安鐘聲', icon: Bell },
+      { id: 'flame', name: '壁爐暖火', icon: Flame },
+      { id: 'heart', name: '真摯感謝', icon: Heart }
+    ];
+
+    const CATEGORIES = ['全部', '同儕祝福', '感謝師長', '歲末祈願', '給未來的自己'];
+    const QUICK_RECIPIENTS = ['班導師', '坐在隔壁的同學', '全班同學與師長', '給未來的自己'];
+
+    const INSPIRATION_PROMPTS = [
+      '每次我在功課卡關的時候，謝謝你總是不厭其煩地教我...',
+      '謝謝老師每天清晨陪伴我們自習，您溫柔的鼓勵是我們最大的定心丸！',
+      '謝謝這學期每次留下來練球或值日時有大家互相照應，祝大家期末考順利歐趴！',
+      '給未來更勇敢的自己：請繼續保持好奇心與善良，無論寒冬多長，春日終將到來。'
+    ];
+
+    // 卡片造型迷你 SVG 預覽
+    const ShapeMiniSvg = ({ shapeId, className = 'w-6 h-6' }) => {
+      switch (shapeId) {
+        case 'tag':
+          return (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+              <path d="M7 3h10l4 5v13H3V8l4-5z" />
+              <circle cx="12" cy="7" r="1.5" />
+            </svg>
+          );
+        case 'arch':
+          return (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+              <path d="M4 11a8 8 0 0 1 16 0v10H4V11z" />
+            </svg>
+          );
+        case 'stamp':
+          return (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+              <rect x="4" y="4" width="16" height="16" strokeDasharray="3 2" />
+              <rect x="7" y="7" width="10" height="10" />
+            </svg>
+          );
+        case 'bauble':
+          return (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+              <rect x="9" y="2" width="6" height="3" rx="1" />
+              <circle cx="12" cy="13" r="8" />
+            </svg>
+          );
+        case 'plaque':
+          return (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+              <path d="M12 3l9 6v12H3V9l9-6z" />
+            </svg>
+          );
+        case 'classic':
+        default:
+          return (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className}>
+              <rect x="4" y="4" width="16" height="16" rx="3" />
+              <circle cx="12" cy="7" r="1" fill="currentColor" />
+            </svg>
+          );
+      }
+    };
+
+    // 預設 35 張全班資料
+    const FULL_CLASS_35_NOTES = [
+      { id: 'n1', to: '班導師 林老師', message: '謝謝老師這學期每天早上陪我們早自習，在我們班際比賽失利時請全班喝熱可可鼓勵我們，祝老師聖誕平安快樂！', from: '01號 小宇', theme: 'cream', shape: 'classic', icon: 'tree', category: '感謝師長', likes: 18, likedBy: [] },
+      { id: 'n2', to: '坐在隔壁的 子軒', message: '每次數學課我卡關的時候，你都很耐心地畫圖講解給我聽，謝謝你這個神隊友，祝我們期末考一起歐趴！', from: '02號 宥廷', theme: 'sage', shape: 'tag', icon: 'star', category: '同儕祝福', likes: 12, likedBy: [] },
+      { id: 'n3', to: '英文科 陳老師', message: '老師準備的西方聖誕文化小故事超有趣，讓我不再害怕開口說英文了！Merry Christmas!', from: '03號 語彤', theme: 'berry', shape: 'arch', icon: 'bell', category: '感謝師長', likes: 15, likedBy: [] },
+      { id: 'n4', to: '排球小隊的戰友們', message: '謝謝大家每天放學留下來練球，不管場上失誤幾次都會互相喊聲「沒事！下一球再來」，我們下學期一定能晉級！', from: '04號 冠宇', theme: 'oat', shape: 'stamp', icon: 'flame', category: '同儕祝福', likes: 21, likedBy: [] },
+      { id: 'n5', to: '溫暖的 宜蓁', message: '那天下大雨我忘記帶傘，謝謝妳二話不說陪我一起撐傘走到車站，心裡一直覺得很暖，祝妳聖誕節收到最棒的禮物！', from: '05號 品妍', theme: 'midnight', shape: 'bauble', icon: 'snow', category: '同儕祝福', likes: 19, likedBy: [] },
+      { id: 'n6', to: '國文科 張老師', message: '謝謝老師在週記本上總是寫下滿滿的溫暖回覆，在我迷惘的時候給我很多力量，祝老師冬日順心！', from: '06號 承恩', theme: 'cream', shape: 'plaque', icon: 'coffee', category: '感謝師長', likes: 14, likedBy: [] },
+      { id: 'n7', to: '化學實驗室第四組', message: '雖然我們每次滴定實驗都緊張到手抖，但有你們一起分工合作、洗燒杯，實驗課變成每週最期待的時光！', from: '07號 柏翰', theme: 'sage', shape: 'classic', icon: 'gift', category: '同儕祝福', likes: 11, likedBy: [] },
+      { id: 'n8', to: '默默付出衛生股長 采潔', message: '謝謝妳每天提醒大家做資源回收跟打掃，讓我們的教室永遠這麼乾淨舒服，辛苦妳了！', from: '溫暖的匿名同學', theme: 'berry', shape: 'tag', icon: 'heart', category: '同儕祝福', likes: 16, likedBy: [] },
+      { id: 'n9', to: '熱血的體育老師', message: '謝謝老師在大隊接力前幫我們特訓傳接棒技巧，還陪我們一起在操場吶喊，有您真好！', from: '09號 俊傑', theme: 'oat', shape: 'arch', icon: 'flame', category: '感謝師長', likes: 13, likedBy: [] },
+      { id: 'n10', to: '合唱比賽伴奏 詩涵', message: '謝謝妳為了班際合唱比賽每天中午留在音樂教室練琴，有妳穩定的琴聲，全班唱起歌來特別有安全感！', from: '10號 詠晴', theme: 'midnight', shape: 'stamp', icon: 'bell', category: '同儕祝福', likes: 22, likedBy: [] },
+      { id: 'n11', to: '全班 35 位同學', message: '很幸運高中分班能跟大家在同一個教室相遇，願我們在歲末冬日都平平安安，明年繼續創造更多美好回憶！', from: '11號 班長 睿澤', theme: 'cream', shape: 'bauble', icon: 'tree', category: '歲末祈願', likes: 28, likedBy: [] },
+      { id: 'n12', to: '歷史科 吳老師', message: '老師講歷史故事就像在看電影一樣精彩，謝謝老師總是鼓勵我們獨立思考！聖誕快樂！', from: '12號 芷瑜', theme: 'sage', shape: 'plaque', icon: 'star', category: '感謝師長', likes: 10, likedBy: [] },
+      { id: 'n13', to: '園遊會擺攤美宣組', message: '謝謝美宣組同學熬夜畫出超好看的聖誕看板，讓我們的攤位成為全校最吸睛的焦點！', from: '13號 浩然', theme: 'berry', shape: 'classic', icon: 'gift', category: '同儕祝福', likes: 15, likedBy: [] },
+      { id: 'n14', to: '借我立可帶的 宇軒', message: '謝謝你這學期大概借了我十次文具都笑笑的沒有生氣，下次換我請你喝熱奶茶！', from: '14號 哲瑋', theme: 'oat', shape: 'tag', icon: 'coffee', category: '同儕祝福', likes: 9, likedBy: [] },
+      { id: 'n15', to: '給三個月後的自己', message: '謝謝這學期沒有放棄努力的自己，希望冬天的累積都能在明年春天開花結果，加油！', from: '15號 心怡', theme: 'midnight', shape: 'arch', icon: 'snow', category: '給未來的自己', likes: 17, likedBy: [] },
+      { id: 'n16', to: '學藝股長 欣妤', message: '每次抬頭看到後面黑板溫馨的節慶插畫，心情就會瞬間變好，謝謝妳用畫筆溫暖了整間教室！', from: '16號 羽柔', theme: 'cream', shape: 'stamp', icon: 'heart', category: '同儕祝福', likes: 20, likedBy: [] },
+      { id: 'n17', to: '物理科 趙老師', message: '謝謝老師下課時間總是很有耐心地留下來幫我們解題，祝老師聖誕佳節愉快、身體健康！', from: '17號 彥廷', theme: 'sage', shape: 'bauble', icon: 'tree', category: '感謝師長', likes: 12, likedBy: [] },
+      { id: 'n18', to: '一起留晚自習的夥伴', message: '冬天的晚上雖然很冷，但抬頭看到身邊還有你們一起安靜讀書的身影，就覺得一點都不孤單了！', from: '18號 庭瑋', theme: 'berry', shape: 'plaque', icon: 'flame', category: '同儕祝福', likes: 18, likedBy: [] },
+      { id: 'n19', to: '熱心助人的 宗翰', message: '那天我不小心在樓梯扭傷腳，謝謝你主動幫我揹書包還扶我去保健室，真的超級感謝你！', from: '溫暖的匿名同學', theme: 'oat', shape: 'classic', icon: 'star', category: '同儕祝福', likes: 24, likedBy: [] },
+      { id: 'n20', to: '輔導室 雅筑老師', message: '謝謝老師總是溫柔地傾聽我的煩惱，每次走出輔導室都覺得心裡充滿暖陽，祝老師聖誕快樂！', from: '20號 姿妤', theme: 'midnight', shape: 'tag', icon: 'coffee', category: '感謝師長', likes: 16, likedBy: [] },
+      { id: 'n21', to: '總務股長 威廷', message: '收班費、訂便當、買班服都靠你一手包辦，帳目永遠清清楚楚，謝謝你為班上做這麼多事！', from: '21號 凱文', theme: 'cream', shape: 'arch', icon: 'gift', category: '同儕祝福', likes: 13, likedBy: [] },
+      { id: 'n22', to: '午餐抬餐桶的小天使們', message: '謝謝每天中午固定去抬熱湯跟飯菜的同學，不管天氣多冷都讓我們有熱騰騰的午餐吃！', from: '22號 佳穎', theme: 'sage', shape: 'stamp', icon: 'heart', category: '同儕祝福', likes: 25, likedBy: [] },
+      { id: 'n23', to: '生物科 許老師', message: '謝謝老師帶我們去校園觀察植物生態，讓我們發現原來冬天的校園也充滿生機！', from: '23號 睿恩', theme: 'berry', shape: 'bauble', icon: 'tree', category: '感謝師長', likes: 11, likedBy: [] },
+      { id: 'n24', to: '愛笑的 曼婷', message: '妳的笑聲真的很有感染力，每次班上氣氛緊繃的時候，只要聽到妳開朗的笑聲大家就放鬆下來了！', from: '24號 筱涵', theme: 'oat', shape: 'plaque', icon: 'bell', category: '同儕祝福', likes: 14, likedBy: [] },
+      { id: 'n25', to: '資訊股長 秉澄', message: '每次教室投影機或電腦出問題，你三秒鐘就能修好，簡直是全班跟老師們的救星！', from: '25號 鈞宥', theme: 'midnight', shape: 'classic', icon: 'star', category: '同儕祝福', likes: 19, likedBy: [] },
+      { id: 'n26', to: '地理科 鄭老師', message: '謝謝老師帶我們認識世界各地的北歐極光與冬日風景，希望有一天我也能親眼去看極光！', from: '26號 晨曦', theme: 'cream', shape: 'tag', icon: 'snow', category: '感謝師長', likes: 12, likedBy: [] },
+      { id: 'n27', to: '英語話劇組的大家', message: '從寫劇本、做紙箱道具到上台演出，謝謝大家沒有人喊累，一起完成了最棒的聖誕短劇！', from: '27號 靖雯', theme: 'sage', shape: 'arch', icon: 'gift', category: '同儕祝福', likes: 17, likedBy: [] },
+      { id: 'n28', to: '每天最早到校開門的 紹齊', message: '謝謝你每天早上六點五十分就來開教室門窗跟電燈，讓大家一進教室就有明亮溫暖的空間！', from: '28號 博鈞', theme: 'berry', shape: 'stamp', icon: 'coffee', category: '同儕祝福', likes: 23, likedBy: [] },
+      { id: 'n29', to: '音樂科 蘇老師', message: '謝謝老師在12月教我們唱這麼多溫暖的聖誕歌曲，讓每週的音樂課都像一場小型音樂會！', from: '29號 樂樂', theme: 'oat', shape: 'bauble', icon: 'bell', category: '感謝師長', likes: 15, likedBy: [] },
+      { id: 'n30', to: '熱舞社的同班夥伴 薇安', message: '看著妳兼顧社團成發跟課業還是這麼努力，真的激勵了我很多，聖誕成發一定大成功！', from: '30號 巧恩', theme: 'midnight', shape: 'plaque', icon: 'flame', category: '同儕祝福', likes: 16, likedBy: [] },
+      { id: 'n31', to: '公民科 黃老師', message: '謝謝老師總是用溫和理性的方式帶我們討論時事，讓我們學會同理與尊重不同的聲音！', from: '31號 宥辰', theme: 'cream', shape: 'classic', icon: 'heart', category: '感謝師長', likes: 13, likedBy: [] },
+      { id: 'n32', to: '幫我撿起掉落筆記的同學', message: '上週在走廊不小心散落一地講義，謝謝好幾位同學馬上蹲下來幫我撿，我們班真的超有愛！', from: '32號 雅婷', theme: 'sage', shape: 'tag', icon: 'star', category: '同儕祝福', likes: 18, likedBy: [] },
+      { id: 'n33', to: '正在為夢想努力的每個人', message: '不管這學期過得順利或有些小挫折，都想跟大家說一聲辛苦了，願新的一年每個人都能心想事成！', from: '33號 翔宇', theme: 'berry', shape: 'arch', icon: 'tree', category: '歲末祈願', likes: 21, likedBy: [] },
+      { id: 'n34', to: '親愛的未來自己', message: '保持善良、保持好奇心，就算遇到寒冬也要記得心裡那盞溫暖的小燈，聖誕快樂！', from: '34號 語嫣', theme: 'oat', shape: 'stamp', icon: 'snow', category: '給未來的自己', likes: 14, likedBy: [] },
+      { id: 'n35', to: '我們最溫暖的班級與老師', message: '35個人、35顆真心，謝謝大家把這間教室變成第二個家。祝全班聖誕快樂、平安喜樂！', from: '35號 副班長 哲瀚', theme: 'midnight', shape: 'bauble', icon: 'gift', category: '歲末祈願', likes: 32, likedBy: [] }
+    ];
+
+    // ==========================================
+    // 造型卡片本體元件 (跨裝置自適應內距與文字排版)
+    // ==========================================
+    const ShapedNoteCard = ({
+      note,
+      themeObj,
+      hasLiked,
+      isTeacherMode,
+      isLargeStage = false,
+      isCompactMatrix = false,
+      isSpotlightActive = false,
+      isNewlyCreated = false,
+      onSelectCard,
+      onToggleLike,
+      onDelete,
+      formatTime,
+      renderCardIcon,
+      isPreview = false
+    }) => {
+      const [isLikingAnim, setIsLikingAnim] = useState(false);
+      const [showFloatingHeart, setShowFloatingHeart] = useState(false);
+      const shape = note.shape || 'classic';
+      const isCompact = isCompactMatrix && !isPreview && !isLargeStage;
+
+      const tiltClass = useMemo(() => {
+        if (isPreview || isLargeStage) return '';
+        const sum = String(note.id || '0')
+          .split('')
+          .reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+        const tilts = [
+          'rotate-[-0.7deg]',
+          'rotate-[0.6deg]',
+          'rotate-[-0.4deg]',
+          'rotate-[0.75deg]',
+          'rotate-0'
+        ];
+        return `${tilts[sum % tilts.length]} hover:rotate-0`;
+      }, [note.id, isPreview, isLargeStage]);
+
+      const handleLikeClick = (e) => {
+        e.stopPropagation();
+        setIsLikingAnim(true);
+        setShowFloatingHeart(true);
+        onToggleLike(note);
+        setTimeout(() => setIsLikingAnim(false), 300);
+        setTimeout(() => setShowFloatingHeart(false), 600);
+      };
+
+      const getShapeContainerStyles = () => {
+        if (isCompact) {
+          switch (shape) {
+            case 'tag':
+              return {
+                className: 'pt-5 pb-3 px-3 rounded-b-xl shadow-md',
+                style: { clipPath: 'polygon(14% 0%, 86% 0%, 100% 20px, 100% 100%, 0% 100%, 0% 20px)' }
+              };
+            case 'arch':
+              return { className: 'pt-5 pb-3 px-3 rounded-t-[50px] rounded-b-xl border-2 shadow-md', style: {} };
+            case 'stamp':
+              return { className: 'p-3 rounded-sm shadow-md border-2 border-dashed', style: {} };
+            case 'bauble':
+              return { className: 'pt-5 pb-3.5 px-3.5 rounded-[28px] border-2 shadow-md', style: {} };
+            case 'plaque':
+              return {
+                className: 'pt-5 pb-3 px-3 rounded-b-lg shadow-md',
+                style: { clipPath: 'polygon(50% 0%, 100% 18px, 100% 100%, 0% 100%, 0% 18px)' }
+              };
+            case 'classic':
+            default:
+              return { className: 'p-3 rounded-xl border-2 shadow-md', style: {} };
+          }
+        }
+
+        if (isLargeStage) {
+          switch (shape) {
+            case 'tag':
+              return {
+                className: 'pt-10 sm:pt-14 pb-6 sm:pb-9 px-5 sm:px-9 sm:px-11 rounded-b-3xl shadow-2xl',
+                style: { clipPath: 'polygon(14% 0%, 86% 0%, 100% 40px, 100% 100%, 0% 100%, 0% 40px)' }
+              };
+            case 'arch':
+              return { className: 'pt-10 sm:pt-14 pb-6 sm:pb-9 px-5 sm:px-9 sm:px-11 rounded-t-[100px] sm:rounded-t-[150px] rounded-b-3xl border-2 shadow-2xl', style: {} };
+            case 'stamp':
+              return {
+                className: 'p-6 sm:p-9 sm:p-11 rounded-md shadow-2xl border-[3px] border-dashed',
+                style: { backgroundImage: `radial-gradient(circle at 0 14px, transparent 6px, ${themeObj.previewBg} 6.5px)` }
+              };
+            case 'bauble':
+              return { className: 'pt-10 sm:pt-14 pb-8 sm:pb-10 px-6 sm:px-10 sm:px-12 rounded-[44px] sm:rounded-[68px] border-2 shadow-2xl', style: {} };
+            case 'plaque':
+              return {
+                className: 'pt-10 sm:pt-14 pb-6 sm:pb-9 px-5 sm:px-9 sm:px-11 rounded-b-2xl shadow-2xl',
+                style: { clipPath: 'polygon(50% 0%, 100% 36px, 100% 100%, 0% 100%, 0% 36px)' }
+              };
+            case 'classic':
+            default:
+              return { className: 'p-5 sm:p-8 sm:p-10 rounded-2xl sm:rounded-3xl border-2 shadow-2xl', style: {} };
+          }
+        }
+
+        switch (shape) {
+          case 'tag':
+            return {
+              className: 'pt-8 sm:pt-10 pb-4 sm:pb-5 px-4 sm:px-5 rounded-b-2xl shadow-md',
+              style: { clipPath: 'polygon(15% 0%, 85% 0%, 100% 32px, 100% 100%, 0% 100%, 0% 32px)' }
+            };
+          case 'arch':
+            return { className: 'pt-8 sm:pt-10 pb-4 sm:pb-5 px-4 sm:px-5 rounded-t-[80px] sm:rounded-t-[105px] rounded-b-2xl border-2 shadow-md', style: {} };
+          case 'stamp':
+            return {
+              className: 'p-4 sm:p-6 rounded-sm shadow-md border-2 border-dashed',
+              style: { backgroundImage: `radial-gradient(circle at 0 12px, transparent 5px, ${themeObj.previewBg} 5.5px)` }
+            };
+          case 'bauble':
+            return { className: 'pt-8 sm:pt-10 pb-5 sm:pb-6 px-5 sm:px-6 rounded-[38px] sm:rounded-[48px] border-2 shadow-md', style: {} };
+          case 'plaque':
+            return {
+              className: 'pt-9 sm:pt-11 pb-4 sm:pb-5 px-4 sm:px-5 rounded-b-xl shadow-md',
+              style: { clipPath: 'polygon(50% 0%, 100% 30px, 100% 100%, 0% 100%, 0% 30px)' }
+            };
+          case 'classic':
+          default:
+            return { className: 'p-4 sm:p-5 rounded-2xl border-2 shadow-md', style: {} };
+        }
+      };
+
+      const shapeConfig = getShapeContainerStyles();
+      const shapeMeta = CARD_SHAPES.find((s) => s.id === shape) || CARD_SHAPES[0];
+
+      return (
+        <div
+          onClick={() => {
+            if (!isPreview && onSelectCard) onSelectCard(note);
+          }}
+          className={`group relative transition-all duration-300 font-bold ${
+            isPreview
+              ? ''
+              : `${tiltClass} hover:-translate-y-1 cursor-pointer active:scale-[0.98] ${
+                  isSpotlightActive
+                    ? 'ring-4 ring-[#D4B475] scale-[1.02] z-30 shadow-[0_0_35px_rgba(212,180,117,0.45)] rounded-2xl'
+                    : ''
+                }`
+          } flex flex-col ${isCompact ? 'pt-1.5' : 'pt-2.5 sm:pt-3'}`}
+        >
+          {/* 造型頂部立體裝飾 */}
+          {shape === 'classic' && (
+            <div className="absolute top-1 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center pointer-events-none">
+              <div
+                className={`${
+                  isCompact ? 'w-2.5 h-2.5' : isLargeStage ? 'w-4 sm:w-5 h-4 sm:h-5' : 'w-3.5 h-3.5'
+                } rounded-full bg-gradient-to-br from-[#E5C88D] to-[#9E7B3B] shadow-md border border-[#FAF7F2]/80`}
+              />
+            </div>
+          )}
+
+          {shape === 'tag' && (
+            <div className="absolute -top-1 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center pointer-events-none">
+              <div
+                className={`${
+                  isCompact ? 'w-3 h-3 -mb-1' : 'w-4 h-4 -mb-2'
+                } rounded-full border-2 border-[#C5A059]`}
+              />
+              <div
+                className={`${
+                  isCompact ? 'w-2 h-2 border' : 'w-3.5 h-3.5 border-2'
+                } rounded-full bg-[#16291F] border-[#C5A059] shadow-inner`}
+              />
+            </div>
+          )}
+
+          {shape === 'arch' && (
+            <div className="absolute top-0.5 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center pointer-events-none">
+              <div
+                className={`${
+                  isCompact ? 'w-3.5 h-3.5' : isLargeStage ? 'w-5 sm:w-7 h-5 sm:h-7' : 'w-5 h-5'
+                } rounded-full bg-[#1B3022] border-2 border-[#C5A059] flex items-center justify-center text-[#D4B475] shadow-sm`}
+              >
+                <Star className={`${isCompact ? 'w-2 h-2' : 'w-3 h-3'} fill-current`} />
+              </div>
+            </div>
+          )}
+
+          {shape === 'stamp' && (
+            <div className="absolute top-0.5 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+              <span
+                className={`px-1.5 sm:px-2 py-0.5 rounded-sm bg-[#8C3A3A] text-[#FAF7F2] ${
+                  isCompact ? 'text-[8px]' : 'text-[10px] sm:text-[11px]'
+                } tracking-widest uppercase font-extrabold shadow-sm`}
+              >
+                {isCompact ? 'DEC 25' : 'WINTER POST • 25'}
+              </span>
+            </div>
+          )}
+
+          {shape === 'bauble' && (
+            <div className="absolute -top-1 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center pointer-events-none">
+              <div
+                className={`${
+                  isCompact ? 'w-2.5 h-2.5 -mb-0.5' : 'w-3.5 h-3.5 -mb-1'
+                } rounded-full border-2 border-[#D4B475]`}
+              />
+              <div
+                className={`${
+                  isCompact ? 'w-5 h-2' : 'w-7 sm:w-9 h-3 sm:h-3.5'
+                } rounded-t-md bg-gradient-to-r from-[#A6823E] via-[#DFC184] to-[#9E7B3B] border border-[#7D5E26] shadow-sm`}
+              />
+            </div>
+          )}
+
+          {shape === 'plaque' && (
+            <div className="absolute -top-0.5 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center pointer-events-none">
+              <div
+                className={`${
+                  isCompact ? 'w-2 h-2' : 'w-3 h-3'
+                } rotate-45 bg-[#8C3A3A] border border-[#D4B475] shadow-sm`}
+              />
+              <div
+                className={`${
+                  isCompact ? 'w-1 h-1 -mt-0.5' : 'w-2 h-2 -mt-1'
+                } rounded-full bg-[#D4B475] shadow`}
+              />
+            </div>
+          )}
+
+          {/* 卡片本體容器 */}
+          <article
+            style={shapeConfig.style}
+            className={`relative flex-1 flex flex-col justify-between ${themeObj.bg} ${themeObj.border} ${themeObj.text} ${shapeConfig.className} group-hover:shadow-xl transition-all duration-200 font-bold`}
+          >
+            {/* 上段：收件人與圖示 */}
+            <div className="relative z-10">
+              <div className="flex items-start justify-between gap-1.5 sm:gap-2 mb-1">
+                <div className="min-w-0">
+                  <span
+                    className={`${
+                      isCompact ? 'text-[10px]' : isLargeStage ? 'text-xs sm:text-sm' : 'text-[11px] sm:text-xs'
+                    } font-extrabold uppercase tracking-wider block ${themeObj.subtext}`}
+                  >
+                    To 致：
+                  </span>
+                  <h3
+                    className={`font-serif font-extrabold tracking-wide truncate ${
+                      isCompact
+                        ? 'text-xs sm:text-sm'
+                        : isLargeStage
+                        ? 'text-xl sm:text-3xl mt-0.5'
+                        : 'text-base sm:text-xl'
+                    }`}
+                  >
+                    {note.to || '全班同學與師長'}
+                  </h3>
+                </div>
+
+                <div
+                  className={`${
+                    isCompact
+                      ? 'w-6 h-6 rounded-md'
+                      : isLargeStage
+                      ? 'w-10 sm:w-12 h-10 sm:h-12 rounded-xl sm:rounded-2xl'
+                      : 'w-8 sm:w-9 h-8 sm:h-9 rounded-xl'
+                  } ${themeObj.badgeBg} flex items-center justify-center shrink-0 ${themeObj.accent} shadow-inner`}
+                  title={`${shapeMeta.name} • ${note.category || '冬日祝福'}`}
+                >
+                  {renderCardIcon(
+                    note.icon,
+                    isCompact
+                      ? 'w-3.5 h-3.5 stroke-[2.2]'
+                      : isLargeStage
+                      ? 'w-5 sm:w-6 h-5 sm:h-6 stroke-[2.4]'
+                      : 'w-4 sm:w-5 h-4 sm:h-5 stroke-[2.2]'
+                  )}
+                </div>
+              </div>
+
+              <div
+                className={`border-t-2 border-dashed ${
+                  isCompact ? 'my-1' : isLargeStage ? 'my-3 sm:my-4' : 'my-2 sm:my-2.5'
+                } opacity-80`}
+                style={{ borderColor: themeObj.borderHex }}
+              />
+
+              {/* 祝福內文 */}
+              <p
+                className={`leading-relaxed whitespace-pre-wrap break-words font-bold ${
+                  isCompact
+                    ? 'text-[11px] sm:text-xs line-clamp-3 sm:line-clamp-4 my-1'
+                    : isLargeStage
+                    ? 'text-base sm:text-2xl my-3 sm:my-5 leading-relaxed'
+                    : 'text-sm sm:text-base my-2 sm:my-3'
+                }`}
+              >
+                {note.message || '在微涼的歲末冬日裡，寫下一份真摯的感謝與祝福...'}
+              </p>
+            </div>
+
+            {/* 下段：署名與按讚互動 */}
+            <div
+              className={`relative z-10 ${
+                isCompact ? 'mt-1.5 pt-1.5' : isLargeStage ? 'mt-4 sm:mt-6 pt-3 sm:pt-4' : 'mt-2.5 sm:mt-3.5 pt-2 sm:pt-3'
+              } border-t-2 flex items-end justify-between gap-1.5`}
+              style={{ borderColor: themeObj.innerHex }}
+            >
+              <div className="min-w-0">
+                <span
+                  className={`${
+                    isCompact ? 'text-[11px]' : isLargeStage ? 'text-sm sm:text-lg' : 'text-xs sm:text-sm'
+                  } font-extrabold block truncate ${themeObj.text}`}
+                >
+                  From：{note.from}
+                </span>
+                {!isCompact && (
+                  <div className="flex items-center flex-wrap gap-1 mt-0.5 sm:mt-1">
+                    <span className={`text-[10px] sm:text-xs font-bold ${themeObj.subtext}`}>
+                      {formatTime(note.createdAt)}
+                    </span>
+                    {note.category && (
+                      <span
+                        className={`text-[10px] sm:text-xs px-1.5 py-0.5 rounded font-extrabold ${themeObj.badgeBg} ${themeObj.subtext} hidden sm:inline-block`}
+                      >
+                        {note.category}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* 互動按鈕 */}
+              {!isPreview && (
+                <div
+                  className="relative flex items-center gap-1 shrink-0"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {showFloatingHeart && (
+                    <span className="absolute -top-5 right-2 text-xs font-black text-[#8C3A3A] pointer-events-none animate-floatUp">
+                      +1
+                    </span>
+                  )}
+
+                  {!isCompact && isTeacherMode && (
+                    <button
+                      onClick={() => onDelete(note.id)}
+                      title="刪除這張卡片"
+                      className={`p-1.5 rounded-lg opacity-75 hover:opacity-100 transition min-w-[36px] min-h-[36px] flex items-center justify-center ${themeObj.subtext}`}
+                      aria-label="刪除卡片"
+                    >
+                      <Trash2 className="w-4 h-4 stroke-[2.25]" />
+                    </button>
+                  )}
+
+                  <button
+                    onClick={handleLikeClick}
+                    className={`${
+                      isCompact
+                        ? 'px-2 py-0.5 text-[11px] min-h-[28px]'
+                        : isLargeStage
+                        ? 'px-3.5 sm:px-4 py-1 sm:py-1.5 text-sm sm:text-base min-h-[40px]'
+                        : 'px-2.5 py-1 text-xs min-h-[34px]'
+                    } rounded-full font-extrabold flex items-center gap-1 transition ${
+                      hasLiked
+                        ? 'bg-[#8C3A3A] text-white shadow-sm'
+                        : `${themeObj.badgeBg} ${themeObj.text} hover:opacity-85`
+                    } ${isLikingAnim ? 'animate-heartPop' : ''}`}
+                    title="送出溫暖共鳴"
+                    aria-label={`送出愛心，目前 ${note.likes || 0} 個`}
+                  >
+                    <Heart
+                      className={`${
+                        isCompact ? 'w-3 h-3' : isLargeStage ? 'w-4 sm:w-5 h-4 sm:h-5' : 'w-3.5 h-3.5'
+                      } stroke-[2.5] ${hasLiked ? 'fill-current text-white' : 'text-[#8C3A3A]'}`}
+                    />
+                    <span>{note.likes || 0}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </article>
+        </div>
+      );
+    };
+
+    // ==========================================
+    // 智慧微雪 Canvas 元件
+    // ==========================================
+    const GentleSnowCanvas = ({ enabled }) => {
+      const canvasRef = useRef(null);
+
+      useEffect(() => {
+        if (!enabled) return;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let animationFrameId;
+
+        const resizeCanvas = () => {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        };
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // 增加雪花總量並建立景深層次 (遠景細雪、中景初雪、近景棉雪)
+        const particleCount = Math.min(85, Math.floor(window.innerWidth / 16));
+        const particles = Array.from({ length: particleCount }, (_, idx) => {
+          // 前 15% 為較大近景棉雪，中間 50% 為標準中景雪，其餘為細碎遠雪
+          const isFore = idx < particleCount * 0.15;
+          const isMid = idx < particleCount * 0.65;
+          const radius = isFore ? Math.random() * 1.5 + 2.5 : isMid ? Math.random() * 1.2 + 1.4 : Math.random() * 0.8 + 0.7;
+          const speedY = isFore ? Math.random() * 0.5 + 0.45 : isMid ? Math.random() * 0.35 + 0.25 : Math.random() * 0.2 + 0.15;
+          const opacity = isFore ? Math.random() * 0.3 + 0.45 : isMid ? Math.random() * 0.25 + 0.25 : Math.random() * 0.2 + 0.12;
+          return {
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radius,
+            speedY,
+            speedX: (Math.random() - 0.5) * 0.35,
+            opacity,
+            swingFreq: Math.random() * 0.01 + 0.005,
+            swingAmp: Math.random() * 0.25 + 0.1
+          };
+        });
+
+        const render = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          particles.forEach((p) => {
+            p.y += p.speedY;
+            p.x += p.speedX + Math.sin(p.y * p.swingFreq) * p.swingAmp;
+
+            if (p.y > canvas.height) {
+              p.y = -5;
+              p.x = Math.random() * canvas.width;
+            }
+            if (p.x > canvas.width) p.x = 0;
+            if (p.x < 0) p.x = canvas.width;
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(250, 247, 242, ${p.opacity})`;
+            ctx.fill();
+          });
+          animationFrameId = requestAnimationFrame(render);
+        };
+
+        render();
+
+        return () => {
+          window.removeEventListener('resize', resizeCanvas);
+          cancelAnimationFrame(animationFrameId);
+        };
+      }, [enabled]);
+
+      if (!enabled) return null;
+
+      return (
+        <canvas
+          ref={canvasRef}
+          className="fixed inset-0 pointer-events-none z-0"
+          aria-hidden="true"
+        />
+      );
+    };
+
+    // ==========================================
+    // 慶祝星芒粒子特效元件
+    // ==========================================
+    const CelebrationSparkles = ({ trigger }) => {
+      const canvasRef = useRef(null);
+
+      useEffect(() => {
+        if (!trigger) return;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const colors = ['#C5A059', '#EAC882', '#FAF7F2', '#8C3A3A', '#4A755B'];
+        const particles = Array.from({ length: 50 }, () => ({
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          vx: (Math.random() - 0.5) * 11,
+          vy: (Math.random() - 0.7) * 13,
+          size: Math.random() * 4.5 + 2,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: 1,
+          decay: Math.random() * 0.02 + 0.015
+        }));
+
+        let animationFrame;
+        const update = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          let alive = false;
+          particles.forEach((p) => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.25;
+            p.alpha -= p.decay;
+
+            if (p.alpha > 0) {
+              alive = true;
+              ctx.save();
+              ctx.globalAlpha = Math.max(0, p.alpha);
+              ctx.fillStyle = p.color;
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.restore();
+            }
+          });
+
+          if (alive) {
+            animationFrame = requestAnimationFrame(update);
+          } else {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+          }
+        };
+
+        update();
+        return () => cancelAnimationFrame(animationFrame);
+      }, [trigger]);
+
+      return (
+        <canvas
+          ref={canvasRef}
+          className="fixed inset-0 pointer-events-none z-50"
+          aria-hidden="true"
+        />
+      );
+    };
+
+    // ==========================================
+    // 主應用程式元件
+    // ==========================================
+    const STORAGE_KEY = 'winter_gratitude_wall_notes_v2';
+
+    function App() {
+      const [localDemoNotes, setLocalDemoNotes] = useState(() => {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          }
+        } catch (e) {}
+        return FULL_CLASS_35_NOTES.map((item, idx) => ({
+          ...item,
+          createdAt: Date.now() - idx * 180000
+        }));
+      });
+
+      useEffect(() => {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(localDemoNotes));
+        } catch (e) {}
+      }, [localDemoNotes]);
+
+      // 使用者身分
+      const [studentProfile, setStudentProfile] = useState({
+        name: '小宇',
+        seatNumber: '01',
+        hasLoggedIn: true
+      });
+      const [isEditingProfile, setIsEditingProfile] = useState(false);
+      const [tempName, setTempName] = useState('小宇');
+      const [tempSeat, setTempSeat] = useState('01');
+
+      // 檢索、分類與排序
+      const [searchKeyword, setSearchKeyword] = useState('');
+      const [selectedFilterCategory, setSelectedFilterCategory] = useState('全部');
+      const [sortBy, setSortBy] = useState('timeDesc');
+      const [showSearchBar, setShowSearchBar] = useState(false);
+
+      // 卡片編輯表單狀態
+      const [isComposerOpen, setIsComposerOpen] = useState(false);
+      const [composerMobileTab, setComposerMobileTab] = useState('form'); // 'form' | 'preview'
+      const [toField, setToField] = useState('');
+      const [messageField, setMessageField] = useState('');
+      const [isAnonymous, setIsAnonymous] = useState(false);
+      const [selectedTheme, setSelectedTheme] = useState('cream');
+      const [selectedShape, setSelectedShape] = useState('classic');
+      const [selectedIcon, setSelectedIcon] = useState('tree');
+      const [selectedCategory, setSelectedCategory] = useState('同儕祝福');
+      const [isSubmitting, setIsSubmitting] = useState(false);
+
+      // 展示模式與投影
+      const [viewMode, setViewMode] = useState('all');
+      const [isCompactAllGrid, setIsCompactAllGrid] = useState(false);
+      const [snowEnabled, setSnowEnabled] = useState(true);
+      const [spotlightIndex, setSpotlightIndex] = useState(0);
+      const [isSpotlightPlaying, setIsSpotlightPlaying] = useState(true);
+      const [activeLightboxNote, setActiveLightboxNote] = useState(null);
+      const [isFullscreen, setIsFullscreen] = useState(false);
+
+      // 動態與提示
+      const [celebrationTrigger, setCelebrationTrigger] = useState(0);
+      const [newlyCreatedId, setNewlyCreatedId] = useState(null);
+      const [toastMessage, setToastMessage] = useState(null);
+
+      // 教師管理
+      const [isTeacherMode, setIsTeacherMode] = useState(false);
+      const [showTeacherModal, setShowTeacherModal] = useState(false);
+      const [teacherPasscode, setTeacherPasscode] = useState('');
+      const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+
+      // 輪播進度條 (4.5 秒)
+      const [carouselProgress, setCarouselProgress] = useState(0);
+      const CAROUSEL_DURATION = 4500;
+
+      const showToast = useCallback((msg) => {
+        setToastMessage(msg);
+        setTimeout(() => {
+          setToastMessage((prev) => (prev === msg ? null : prev));
+        }, 3000);
+      }, []);
+
+      // 篩選與排序邏輯
+      const displayedNotes = useMemo(() => {
+        let list = [...localDemoNotes];
+
+        if (searchKeyword.trim()) {
+          const kw = searchKeyword.trim().toLowerCase();
+          list = list.filter(
+            (n) =>
+              (n.to && n.to.toLowerCase().includes(kw)) ||
+              (n.from && n.from.toLowerCase().includes(kw)) ||
+              (n.message && n.message.toLowerCase().includes(kw))
+          );
+        }
+
+        if (selectedFilterCategory !== '全部') {
+          list = list.filter((n) => n.category === selectedFilterCategory);
+        }
+
+        if (sortBy === 'likesDesc') {
+          list.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+        } else if (sortBy === 'seatAsc') {
+          list.sort((a, b) => {
+            const numA = parseInt(a.from.match(/\d+/)?.[0] || '999', 10);
+            const numB = parseInt(b.from.match(/\d+/)?.[0] || '999', 10);
+            return numA - numB;
+          });
+        } else {
+          list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        }
+
+        return list;
+      }, [localDemoNotes, searchKeyword, selectedFilterCategory, sortBy]);
+
+      // 輪播進度計時
+      useEffect(() => {
+        if (viewMode !== 'spotlight' || !isSpotlightPlaying || displayedNotes.length === 0) {
+          setCarouselProgress(0);
+          return;
+        }
+
+        const intervalMs = 50;
+        const step = (intervalMs / CAROUSEL_DURATION) * 100;
+
+        const timer = setInterval(() => {
+          setCarouselProgress((prev) => {
+            if (prev >= 100) {
+              setSpotlightIndex((sIdx) => (sIdx + 1) % displayedNotes.length);
+              return 0;
+            }
+            return prev + step;
+          });
+        }, intervalMs);
+
+        return () => clearInterval(timer);
+      }, [viewMode, isSpotlightPlaying, displayedNotes.length]);
+
+      useEffect(() => {
+        if (spotlightIndex >= displayedNotes.length) {
+          setSpotlightIndex(0);
+        }
+      }, [displayedNotes.length, spotlightIndex]);
+
+      // 鍵盤快捷鍵
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if (activeLightboxNote) {
+            if (e.key === 'Escape') {
+              setActiveLightboxNote(null);
+            } else if (e.key === 'ArrowLeft') {
+              const currentIdx = displayedNotes.findIndex((n) => n.id === activeLightboxNote.id);
+              if (currentIdx > 0) setActiveLightboxNote(displayedNotes[currentIdx - 1]);
+            } else if (e.key === 'ArrowRight') {
+              const currentIdx = displayedNotes.findIndex((n) => n.id === activeLightboxNote.id);
+              if (currentIdx < displayedNotes.length - 1) setActiveLightboxNote(displayedNotes[currentIdx + 1]);
+            }
+          } else if (viewMode === 'spotlight') {
+            if (e.key === 'ArrowLeft') {
+              setSpotlightIndex((prev) => (prev - 1 + displayedNotes.length) % displayedNotes.length);
+              setCarouselProgress(0);
+            } else if (e.key === 'ArrowRight') {
+              setSpotlightIndex((prev) => (prev + 1) % displayedNotes.length);
+              setCarouselProgress(0);
+            } else if (e.key === ' ') {
+              e.preventDefault();
+              setIsSpotlightPlaying((p) => !p);
+            }
+          }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [activeLightboxNote, viewMode, displayedNotes]);
+
+      const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
+        } else {
+          document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
+        }
+      };
+
+      const handleLoginSubmit = (e) => {
+        e.preventDefault();
+        const trimmedName = tempName.trim();
+        if (!trimmedName) {
+          showToast('請輸入姓名或暱稱');
+          return;
+        }
+        setStudentProfile({
+          name: trimmedName,
+          seatNumber: tempSeat.trim(),
+          hasLoggedIn: true
+        });
+        setIsEditingProfile(false);
+        showToast(`歡迎進入冬日感恩牆，${trimmedName}！`);
+      };
+
+      const handleCreateNote = (e) => {
+        e.preventDefault();
+        if (!messageField.trim()) {
+          showToast('請填寫感恩與祝福內容');
+          return;
+        }
+
+        setIsSubmitting(true);
+        try {
+          const displayAuthor = studentProfile.seatNumber
+            ? `${studentProfile.seatNumber}號 ${studentProfile.name}`
+            : studentProfile.name || '班級同學';
+
+          const newNote = {
+            id: `note-custom-${Date.now()}`,
+            to: toField.trim() || '全班同學與師長',
+            message: messageField.trim(),
+            from: isAnonymous ? '溫暖的匿名同學' : displayAuthor,
+            realAuthorName: displayAuthor,
+            authorUid: 'local-student',
+            isAnonymous,
+            theme: selectedTheme,
+            shape: selectedShape,
+            icon: selectedIcon,
+            category: selectedCategory,
+            likes: 0,
+            likedBy: [],
+            createdAt: Date.now()
+          };
+
+          setLocalDemoNotes((prev) => [newNote, ...prev]);
+          setToField('');
+          setMessageField('');
+          setIsAnonymous(false);
+          setIsComposerOpen(false);
+
+          const createdId = newNote.id;
+          setNewlyCreatedId(createdId);
+          setTimeout(() => setNewlyCreatedId(null), 4500);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          setCelebrationTrigger((t) => t + 1);
+          showToast('造型祝福卡已溫柔地釘上留言牆！');
+        } catch (err) {
+          showToast('發布失敗，請稍後重試');
+        } finally {
+          setIsSubmitting(false);
+        }
+      };
+
+      const handleToggleLike = (note) => {
+        const currentUid = 'local-student';
+        setLocalDemoNotes((prev) =>
+          prev.map((item) => {
+            if (item.id !== note.id) return item;
+            const likedBy = Array.isArray(item.likedBy) ? item.likedBy : [];
+            const hasLiked = likedBy.includes(currentUid);
+            const updatedLikedBy = hasLiked
+              ? likedBy.filter((id) => id !== currentUid)
+              : [...likedBy, currentUid];
+            const baseLikes = (item.likes || 0) + (hasLiked ? -1 : 1);
+            return {
+              ...item,
+              likedBy: updatedLikedBy,
+              likes: Math.max(0, baseLikes)
+            };
+          })
+        );
+      };
+
+      const handleCopyCardText = (note) => {
+        const text = `致 ${note.to}：\n${note.message}\n—— 來自 ${note.from} 的冬日祝福`;
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('已複製卡片祝福內容至剪貼簿！');
+        }).catch(() => {
+          showToast('複製失敗，請手動選取文字');
+        });
+      };
+
+      const handleConfirmDelete = () => {
+        if (!deleteConfirmId) return;
+        setLocalDemoNotes((prev) => prev.filter((item) => item.id !== deleteConfirmId));
+        setDeleteConfirmId(null);
+        showToast('已從留言牆移除該張卡片');
+      };
+
+      const handleExportCSV = () => {
+        if (localDemoNotes.length === 0) {
+          showToast('目前無留言可供匯出');
+          return;
+        }
+        const headers = ['張貼時間', '卡片造型', '分類', '給誰(To)', '感恩與祝福內容', '署名(From)', '共鳴愛心數'];
+        const rows = localDemoNotes
+          .slice()
+          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+          .map((n) => {
+            const dateStr = n.createdAt ? new Date(n.createdAt).toLocaleString('zh-TW') : '';
+            const shapeName = (CARD_SHAPES.find((s) => s.id === n.shape) || CARD_SHAPES[0]).name;
+            const escapeCSV = (str) => `"${String(str || '').replace(/"/g, '""')}"`;
+            return [
+              escapeCSV(dateStr),
+              escapeCSV(shapeName),
+              escapeCSV(n.category || '同儕祝福'),
+              escapeCSV(n.to),
+              escapeCSV(n.message),
+              escapeCSV(n.from),
+              n.likes || 0
+            ].join(',');
+          });
+
+        const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `冬日感恩與祝福牆紀錄_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('已匯出全班祝福紀錄 CSV 檔案！');
+      };
+
+      const handleTeacherUnlock = (e) => {
+        e.preventDefault();
+        if (teacherPasscode.trim() === '1225' || teacherPasscode.trim().toLowerCase() === 'teacher') {
+          setIsTeacherMode(true);
+          setShowTeacherModal(false);
+          setTeacherPasscode('');
+          showToast('已啟用教師管理模式');
+        } else {
+          showToast('通行碼不正確（預設為 1225）');
+        }
+      };
+
+      const formatTime = (timestamp) => {
+        if (!timestamp) return '剛剛';
+        const diffSec = Math.floor((Date.now() - timestamp) / 1000);
+        if (diffSec < 60) return '剛剛';
+        if (diffSec < 3600) return `${Math.floor(diffSec / 60)} 分鐘前`;
+        if (diffSec < 86400) return `${Math.floor(diffSec / 3600)} 小時前`;
+        const date = new Date(timestamp);
+        return `${date.getMonth() + 1}月${date.getDate()}日`;
+      };
+
+      const renderCardIcon = (iconId, className = 'w-5 h-5') => {
+        const found = CARD_ICONS.find((item) => item.id === iconId) || CARD_ICONS[0];
+        const IconComponent = found.icon;
+        return <IconComponent className={className} />;
+      };
+
+      // ==========================================
+      // 學生登入歡迎頁面
+      // ==========================================
+      if (!studentProfile.hasLoggedIn) {
+        return (
+          <div className="min-h-screen bg-gradient-to-b from-[#0F1E16] via-[#16291F] to-[#1B3022] text-[#FAF7F2] flex flex-col justify-between relative overflow-hidden font-sans font-bold px-4 py-6">
+            <GentleSnowCanvas enabled={snowEnabled} />
+
+            <header className="relative z-10 max-w-5xl w-full mx-auto flex items-center justify-between pt-2">
+              <div className="flex items-center gap-2 text-[#D4B475]">
+                <TreePine className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.25]" />
+                <span className="tracking-widest text-xs sm:text-sm font-extrabold uppercase opacity-95">
+                  Winter Gratitude & Blessing
+                </span>
+              </div>
+              <button
+                onClick={() => setSnowEnabled(!snowEnabled)}
+                className="flex items-center gap-1.5 text-xs font-extrabold text-[#D0E0D5] hover:text-[#FAF7F2] bg-[#1F3729]/80 px-3 py-1.5 rounded-full border border-[#385A46] transition"
+              >
+                <Snowflake className="w-3.5 h-3.5" />
+                <span>{snowEnabled ? '飄雪中' : '無雪'}</span>
+              </button>
+            </header>
+
+            <main className="relative z-10 flex-1 flex items-center justify-center my-6">
+              <div className="w-full max-w-md bg-[#FAF7F2] text-[#141C18] rounded-2xl shadow-2xl border-2 border-[#E6DFD3] p-6 sm:p-10 relative overflow-hidden font-bold">
+                <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-[#8C3A3A] via-[#C5A059] to-[#4A6B53]" />
+
+                <div className="flex flex-col items-center text-center mb-6">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#EFECE6] border-2 border-[#DFD7C8] flex items-center justify-center text-[#8C3A3A] mb-3 shadow-inner">
+                    <Heart className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.2]" />
+                  </div>
+                  <span className="text-xs tracking-widest uppercase text-[#8C7A5B] font-extrabold mb-1">
+                    歲末溫馨企劃
+                  </span>
+                  <h1 className="text-xl sm:text-3xl font-serif font-extrabold text-[#1B3022] tracking-wide">
+                    冬日感恩與祝福留言牆
+                  </h1>
+                  <p className="text-xs sm:text-sm font-bold text-[#3A443E] mt-2 leading-relaxed">
+                    聖誕與新年的腳步近了。讓我們寫下一份真摯的感謝或期許，送給陪伴身旁的師長與同學。
+                  </p>
+                </div>
+
+                <form onSubmit={handleLoginSubmit} className="space-y-3.5">
+                  <div>
+                    <label className="block text-xs font-extrabold text-[#2C3531] uppercase tracking-wider mb-1">
+                      座號 (選填)
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={tempSeat}
+                      onChange={(e) => setTempSeat(e.target.value)}
+                      placeholder="例如：12"
+                      maxLength={10}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border-2 border-[#D8D0C5] text-[#141C18] font-bold placeholder-[#8E887E] focus:outline-none focus:ring-2 focus:ring-[#C5A059] transition text-base sm:text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-extrabold text-[#2C3531] uppercase tracking-wider mb-1">
+                      您的姓名或班級暱稱 <span className="text-[#8C3A3A]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={tempName}
+                      onChange={(e) => setTempName(e.target.value)}
+                      placeholder="例如：子軒、小宇..."
+                      maxLength={20}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border-2 border-[#D8D0C5] text-[#141C18] font-bold placeholder-[#8E887E] focus:outline-none focus:ring-2 focus:ring-[#C5A059] transition text-base sm:text-sm"
+                    />
+                    <p className="text-[11px] font-bold text-[#525C56] mt-1">
+                      ※ 發布祝福時仍可自由選擇是否設為「匿名」。
+                    </p>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full mt-2 py-3 px-6 rounded-xl bg-[#1B3022] hover:bg-[#25412E] active:scale-[0.99] text-[#FAF7F2] font-extrabold text-sm tracking-wide shadow-md flex items-center justify-center gap-2 min-h-[46px]"
+                  >
+                    <Sparkles className="w-4 h-4 text-[#D4B475]" />
+                    推開木門，進入留言牆
+                  </button>
+                </form>
+
+                <div className="mt-5 pt-4 border-t-2 border-[#E6DFD3] flex items-center justify-between text-xs font-extrabold text-[#49534D]">
+                  <span>共 {localDemoNotes.length} 張卡片</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStudentProfile({
+                        name: '大螢幕展示',
+                        seatNumber: '',
+                        hasLoggedIn: true
+                      });
+                    }}
+                    className="text-[#8C3A3A] hover:underline font-extrabold flex items-center gap-1"
+                  >
+                    直接進入大螢幕展示 →
+                  </button>
+                </div>
+              </div>
+            </main>
+
+            <footer className="relative z-10 text-center text-xs font-bold text-[#B4C6B9] pb-2">
+              願每一句真摯的話語，都成為冬日裡的一道暖光
+            </footer>
+          </div>
+        );
+      }
+
+      // ==========================================
+      // 主互動留言牆介面 (手機/平板/桌面全面最佳化)
+      // ==========================================
+      return (
+        <div className="min-h-screen bg-gradient-to-b from-[#0F1E16] via-[#16291F] to-[#1B3022] text-[#FAF7F2] relative font-sans font-bold pb-28">
+          <GentleSnowCanvas enabled={snowEnabled} />
+          <CelebrationSparkles trigger={celebrationTrigger} />
+
+          {/* 氛圍光暈：增強冬日暖紅壁爐微暈與香檳金光澤 */}
+          <div className="fixed -top-10 right-1/5 w-[520px] h-[520px] bg-[#8C3A3A]/15 rounded-full blur-[130px] pointer-events-none" />
+          <div className="fixed top-1/3 -left-20 w-[420px] h-[420px] bg-[#8C3A3A]/10 rounded-full blur-[110px] pointer-events-none" />
+          <div className="fixed top-0 left-1/4 w-96 h-96 bg-[#C5A059]/8 rounded-full blur-[100px] pointer-events-none" />
+
+          {/* 即時通知 Toast */}
+          {toastMessage && (
+            <div className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-50 bg-[#FAF7F2] text-[#141C18] border-l-4 border-[#C5A059] px-4 sm:px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 animate-toastIn font-extrabold text-xs sm:text-sm max-w-[90vw]">
+              <Sparkles className="w-4 h-4 text-[#C5A059] shrink-0" />
+              <span>{toastMessage}</span>
+            </div>
+          )}
+
+          {/* 頂部導覽列 (手機二層自適應、桌面單行精緻) */}
+          <header className="relative z-20 border-b border-[#2A4434]/90 bg-[#122219]/95 backdrop-blur-md sticky top-0 shadow-sm">
+            {/* 頂部聖誕紅金節慶飾條 */}
+            <div className="h-1 w-full bg-gradient-to-r from-[#8C3A3A] via-[#C5A059] to-[#8C3A3A] shadow-sm" />
+            <div className="max-w-[1600px] mx-auto px-3.5 sm:px-6 lg:px-8 py-2.5 sm:py-3">
+              {/* 第一行：標題 + 常用小功能按鈕 (符合手機觸控佈局) */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <div className="relative shrink-0">
+                    <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-[#1F3729] border-2 border-[#385A46] flex items-center justify-center text-[#D4B475] shadow-inner">
+                      <TreePine className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.25]" />
+                    </div>
+                    {/* 聖誕冬青紅漿果立體裝飾 */}
+                    <div className="absolute -top-1.5 -right-1.5 flex items-center pointer-events-none">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#A62B2B] border border-[#FAF7F2] shadow-sm block" />
+                      <span className="w-2 h-2 rounded-full bg-[#8C2020] border border-[#FAF7F2] -ml-1 -mt-1 shadow-sm block" />
+                    </div>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-base sm:text-2xl font-serif font-extrabold tracking-wide text-[#FAF7F2] truncate">
+                        冬日感恩留言牆
+                      </h1>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-extrabold bg-[#8C3A3A] text-[#FAF7F2] border border-[#B84545] shadow-sm shrink-0">
+                        聖誕特輯・{displayedNotes.length}/{localDemoNotes.length}張
+                      </span>
+                    </div>
+                    <p className="text-xs font-bold text-[#C2D4C8] hidden md:block mt-0.5">
+                      點選任一張卡片可放大檢視或複製祝福內容
+                    </p>
+                  </div>
+                </div>
+
+                {/* 右側工具操作按鈕 */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {/* 檢索切換按鈕 */}
+                  <button
+                    onClick={() => setShowSearchBar(!showSearchBar)}
+                    className={`p-2 sm:px-3 sm:py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 border transition min-h-[36px] min-w-[36px] justify-center ${
+                      showSearchBar || searchKeyword || selectedFilterCategory !== '全部'
+                        ? 'bg-[#C5A059] border-[#C5A059] text-[#122219]'
+                        : 'bg-[#1F3729] border-[#385A46] text-[#FAF7F2]'
+                    }`}
+                    title="展開搜尋與分類"
+                    aria-label="檢索篩選"
+                  >
+                    <Search className="w-4 h-4" />
+                    <span className="hidden md:inline">檢索</span>
+                  </button>
+
+                  {/* 全螢幕切換 */}
+                  <button
+                    onClick={toggleFullscreen}
+                    className="p-2 sm:px-3 sm:py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 border bg-[#1F3729] border-[#385A46] text-[#FAF7F2] hover:bg-[#284534] transition min-h-[36px] min-w-[36px] justify-center"
+                    title="投影全螢幕"
+                    aria-label="全螢幕"
+                  >
+                    {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                    <span className="hidden lg:inline">{isFullscreen ? '退出全螢幕' : '全螢幕'}</span>
+                  </button>
+
+                  {/* 飄雪切換 */}
+                  <button
+                    onClick={() => setSnowEnabled(!snowEnabled)}
+                    className={`p-2 sm:px-3 sm:py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 border transition min-h-[36px] min-w-[36px] justify-center ${
+                      snowEnabled
+                        ? 'bg-[#1F3729] border-[#385A46] text-[#FAF7F2]'
+                        : 'bg-transparent border-[#2A4434] text-[#8FA395]'
+                    }`}
+                    title="飄雪開關"
+                    aria-label="飄雪切換"
+                  >
+                    <Snowflake className="w-4 h-4 text-[#D4B475]" />
+                    <span className="hidden xl:inline">{snowEnabled ? '微雪' : '無雪'}</span>
+                  </button>
+
+                  {/* 教師管理 */}
+                  <button
+                    onClick={() => {
+                      if (isTeacherMode) {
+                        setIsTeacherMode(false);
+                        showToast('已關閉教師模式');
+                      } else {
+                        setShowTeacherModal(true);
+                      }
+                    }}
+                    className={`p-2 sm:px-3 sm:py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 border transition min-h-[36px] min-w-[36px] justify-center ${
+                      isTeacherMode
+                        ? 'bg-[#8C3A3A] border-[#B25959] text-white'
+                        : 'bg-[#1A2F23] border-[#385A46] text-[#C2D4C8]'
+                    }`}
+                    title="教師管理模式"
+                    aria-label="教師模式"
+                  >
+                    <Shield className="w-4 h-4" />
+                    <span className="hidden xl:inline">{isTeacherMode ? '管理中' : '教師'}</span>
+                  </button>
+
+                  {/* 桌面端直接顯示發布按鈕 */}
+                  <button
+                    onClick={() => setIsComposerOpen(true)}
+                    className="hidden sm:flex px-4 py-2 rounded-full bg-[#C5A059] hover:bg-[#D1AE68] text-[#122219] font-extrabold text-xs sm:text-sm shadow-md transition items-center gap-1.5"
+                  >
+                    <PlusCircle className="w-4 h-4 stroke-[2.5]" />
+                    <span>寫下祝福</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 第二行：分段模式切換 (手機佔滿寬度，平板以上並排) */}
+              <div className="mt-2 sm:mt-2.5 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 bg-[#0D1A13] p-1 rounded-xl border border-[#2E4B3A] shadow-inner w-full sm:w-auto">
+                  <button
+                    onClick={() => setViewMode('all')}
+                    className={`flex-1 sm:flex-initial px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition ${
+                      viewMode === 'all'
+                        ? 'bg-[#C5A059] text-[#122219] shadow'
+                        : 'text-[#C2D4C8] hover:text-white'
+                    }`}
+                  >
+                    <LayoutGrid className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>全部畫面</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setViewMode('spotlight');
+                      setIsSpotlightPlaying(true);
+                    }}
+                    className={`flex-1 sm:flex-initial px-3 sm:px-4 py-1.5 rounded-lg text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 transition ${
+                      viewMode === 'spotlight'
+                        ? 'bg-[#8C3A3A] text-[#FAF7F2] shadow'
+                        : 'text-[#C2D4C8] hover:text-white'
+                    }`}
+                  >
+                    <Play className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>聚焦輪播</span>
+                  </button>
+
+                  {viewMode === 'all' && (
+                    <button
+                      onClick={() => setIsCompactAllGrid(!isCompactAllGrid)}
+                      className={`hidden lg:flex px-3 py-1.5 rounded-lg text-xs font-extrabold items-center gap-1.5 border transition ${
+                        isCompactAllGrid
+                          ? 'bg-[#264231] border-[#4A755B] text-[#EAC882]'
+                          : 'bg-[#16291F] border-[#2C4736] text-[#B4C6B9] hover:text-white'
+                      }`}
+                      title="切換 7 欄總覽"
+                    >
+                      <Grid className="w-3.5 h-3.5" />
+                      <span>{isCompactAllGrid ? '7欄總覽中' : '7欄單頁總覽'}</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* 學生身分徽章 */}
+                <div className="hidden sm:flex items-center bg-[#1A2F23] border border-[#385A46] rounded-full px-3 py-1 text-xs font-extrabold text-[#FAF7F2]">
+                  <User className="w-3.5 h-3.5 text-[#D4B475] mr-1.5 stroke-[2.5]" />
+                  <span className="max-w-[120px] truncate">
+                    {studentProfile.seatNumber ? `${studentProfile.seatNumber}號 ` : ''}
+                    {studentProfile.name}
+                  </span>
+                  <button
+                    onClick={() => {
+                      setTempName(studentProfile.name);
+                      setTempSeat(studentProfile.seatNumber);
+                      setIsEditingProfile(true);
+                    }}
+                    title="修改暱稱"
+                    className="ml-2 text-[#B4C6B9] hover:text-white"
+                  >
+                    <Edit3 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* 即時搜尋與分類篩選列 (手機橫向平滑滑動，不換行堆疊) */}
+            {showSearchBar && (
+              <div className="bg-[#0E1A13] border-t border-[#263D2E] px-3.5 sm:px-6 py-2.5">
+                <div className="max-w-[1600px] mx-auto flex flex-col md:flex-row md:items-center justify-between gap-2.5 text-xs">
+                  {/* 搜尋關鍵字輸入框 */}
+                  <div className="relative w-full md:max-w-xs">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#8FA395]" />
+                    <input
+                      type="text"
+                      value={searchKeyword}
+                      onChange={(e) => setSearchKeyword(e.target.value)}
+                      placeholder="搜尋收件人、寄件人或文字..."
+                      className="w-full pl-9 pr-8 py-2 rounded-xl bg-[#1A2F23] border border-[#385A46] text-[#FAF7F2] font-bold placeholder-[#7D9183] focus:outline-none focus:ring-1 focus:ring-[#C5A059] text-base sm:text-xs"
+                    />
+                    {searchKeyword && (
+                      <button
+                        onClick={() => setSearchKeyword('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#8FA395] hover:text-white p-1"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 手機水平平滑滾動分類標籤 */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 flex-nowrap shrink-0">
+                    <span className="text-[#8FA395] font-extrabold shrink-0">主題：</span>
+                    {CATEGORIES.map((cat) => (
+                      <button
+                        key={cat}
+                        onClick={() => setSelectedFilterCategory(cat)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-extrabold shrink-0 transition min-h-[32px] ${
+                          selectedFilterCategory === cat
+                            ? 'bg-[#C5A059] text-[#122219]'
+                            : 'bg-[#1A2F23] text-[#B4C6B9] hover:text-white'
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* 排序方式選單 */}
+                  <div className="flex items-center justify-between md:justify-end gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[#8FA395] font-extrabold">排序：</span>
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className="px-2.5 py-1.5 rounded-lg bg-[#1A2F23] border border-[#385A46] text-[#FAF7F2] font-extrabold text-xs focus:outline-none"
+                      >
+                        <option value="timeDesc">最新發布</option>
+                        <option value="likesDesc">最多共鳴</option>
+                        <option value="seatAsc">學生座號</option>
+                      </select>
+                    </div>
+
+                    {(searchKeyword || selectedFilterCategory !== '全部') && (
+                      <button
+                        onClick={() => {
+                          setSearchKeyword('');
+                          setSelectedFilterCategory('全部');
+                        }}
+                        className="text-[#EAC882] hover:underline font-extrabold text-xs"
+                      >
+                        重設篩選
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 教師管理工具條 */}
+            {isTeacherMode && (
+              <div className="bg-[#1B3022] border-t border-[#385A46] px-4 py-2 flex flex-wrap items-center justify-center gap-2 text-xs font-extrabold">
+                <span className="text-[#EAC882]">★ 教師管理模式：</span>
+                <button
+                  onClick={handleExportCSV}
+                  className="px-3 py-1 rounded-lg bg-[#264231] hover:bg-[#31543F] text-[#FAF7F2] border border-[#4A755B] flex items-center gap-1"
+                >
+                  <Download className="w-3.5 h-3.5 text-[#EAC882]" />
+                  匯出 CSV
+                </button>
+                <button
+                  onClick={() => {
+                    const initial = FULL_CLASS_35_NOTES.map((item, idx) => ({
+                      ...item,
+                      createdAt: Date.now() - idx * 180000
+                    }));
+                    setLocalDemoNotes(initial);
+                    showToast('已重設回預設 35 張全班卡片！');
+                  }}
+                  className="px-3 py-1 rounded-lg bg-[#264231] hover:bg-[#31543F] text-[#FAF7F2] border border-[#4A755B] flex items-center gap-1"
+                >
+                  <Layers className="w-3.5 h-3.5 text-[#EAC882]" />
+                  重設卡片
+                </button>
+              </div>
+            )}
+          </header>
+
+          {/* 主展示區 */}
+          <main className="relative z-10 max-w-[1600px] mx-auto px-3.5 sm:px-6 lg:px-8 pt-3 sm:pt-5">
+            {/* 節慶暖冬微型問候條 */}
+            <div className="mb-4 px-4 py-2 rounded-2xl bg-gradient-to-r from-[#1B3022]/90 via-[#261616]/90 to-[#1B3022]/90 border border-[#8C3A3A]/40 flex items-center justify-between text-xs font-extrabold text-[#EBD3D3] shadow-md backdrop-blur-sm">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#A62B2B] animate-pulse" />
+                <span className="tracking-wide">寒冬歲末・願每一張卡片傳遞聖誕的溫暖、感謝與祝福</span>
+              </div>
+              <span className="hidden sm:inline-block text-[#EAC882] font-serif">Merry Christmas</span>
+            </div>
+            {/* 模式 A：聚焦輪播舞台 */}
+            {viewMode === 'spotlight' && displayedNotes.length > 0 && (
+              <div className="space-y-6 sm:space-y-8">
+                <div className="bg-gradient-to-b from-[#1A3124]/95 to-[#122219]/95 border-2 border-[#385A46] rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-2xl relative overflow-hidden">
+                  {/* 輪播進度條 */}
+                  {isSpotlightPlaying && (
+                    <div className="absolute top-0 inset-x-0 h-1 bg-[#0F1E16]">
+                      <div
+                        className="h-full bg-gradient-to-r from-[#C5A059] to-[#EAC882] transition-all duration-75"
+                        style={{ width: `${carouselProgress}%` }}
+                      />
+                    </div>
+                  )}
+
+                  {/* 輪播控制列 */}
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4 sm:mb-6">
+                    <span className="px-3.5 py-1.5 rounded-full bg-[#8C3A3A] text-[#FAF7F2] text-xs sm:text-sm font-extrabold flex items-center gap-2 shadow self-start sm:self-auto">
+                      <Sparkles className="w-3.5 h-3.5 text-[#EAC882]" />
+                      聚焦輪播（第 {spotlightIndex + 1} / {displayedNotes.length} 張）
+                    </span>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                      <button
+                        onClick={() => {
+                          setSpotlightIndex((prev) => (prev - 1 + displayedNotes.length) % displayedNotes.length);
+                          setCarouselProgress(0);
+                        }}
+                        className="flex-1 sm:flex-initial px-3 py-2 rounded-xl bg-[#1F3729] hover:bg-[#284534] border border-[#385A46] text-[#FAF7F2] font-extrabold flex items-center justify-center gap-1 text-xs sm:text-sm min-h-[40px]"
+                        title="上一張 (←)"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                        <span>上一張</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setIsSpotlightPlaying(!isSpotlightPlaying);
+                          setCarouselProgress(0);
+                        }}
+                        className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-[#C5A059] hover:bg-[#D4B475] text-[#122219] text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1 shadow min-h-[40px]"
+                        title="暫停/繼續 (Space)"
+                      >
+                        {isSpotlightPlaying ? (
+                          <>
+                            <Pause className="w-3.5 h-3.5 stroke-[2.5]" />
+                            <span>暫停</span>
+                          </>
+                        ) : (
+                          <>
+                            <Play className="w-3.5 h-3.5 stroke-[2.5]" />
+                            <span>繼續</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setSpotlightIndex((prev) => (prev + 1) % displayedNotes.length);
+                          setCarouselProgress(0);
+                        }}
+                        className="flex-1 sm:flex-initial px-3 py-2 rounded-xl bg-[#1F3729] hover:bg-[#284534] border border-[#385A46] text-[#FAF7F2] font-extrabold flex items-center justify-center gap-1 text-xs sm:text-sm min-h-[40px]"
+                        title="下一張 (→)"
+                      >
+                        <span>下一張</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 輪播大型卡片 */}
+                  {(() => {
+                    const spotNote = displayedNotes[spotlightIndex] || displayedNotes[0];
+                    const spotTheme = CARD_THEMES.find((t) => t.id === spotNote.theme) || CARD_THEMES[0];
+                    const likedBy = Array.isArray(spotNote.likedBy) ? spotNote.likedBy : [];
+                    return (
+                      <div className="max-w-2xl mx-auto my-2 sm:my-4">
+                        <ShapedNoteCard
+                          note={spotNote}
+                          themeObj={spotTheme}
+                          hasLiked={likedBy.includes('local-student')}
+                          isTeacherMode={isTeacherMode}
+                          isLargeStage={true}
+                          onSelectCard={(n) => setActiveLightboxNote(n)}
+                          onToggleLike={handleToggleLike}
+                          onDelete={(id) => setDeleteConfirmId(id)}
+                          formatTime={formatTime}
+                          renderCardIcon={renderCardIcon}
+                        />
+                      </div>
+                    );
+                  })()}
+
+                  {/* 快速序號導覽 (手機端橫向平滑滑動) */}
+                  <div className="mt-6 pt-4 border-t border-[#2E4B3A] flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1 flex-nowrap sm:flex-wrap sm:justify-center">
+                    {displayedNotes.map((n, i) => (
+                      <button
+                        key={n.id}
+                        onClick={() => {
+                          setSpotlightIndex(i);
+                          setCarouselProgress(0);
+                        }}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-extrabold shrink-0 transition min-w-[32px] min-h-[32px] ${
+                          i === spotlightIndex
+                            ? 'bg-[#C5A059] text-[#122219] scale-105 shadow ring-2 ring-[#FAF7F2]'
+                            : 'bg-[#1F3729] text-[#B4C6B9] hover:bg-[#2A4836]'
+                        }`}
+                        title={`切換至：To ${n.to} (${n.from})`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 總覽矩陣 */}
+                <div>
+                  <h3 className="text-sm sm:text-lg font-serif font-extrabold text-[#EAC882] flex items-center gap-2 mb-3">
+                    <Layers className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <span>全班卡片總覽（點擊可放大檢視）</span>
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-2.5 sm:gap-3.5 items-stretch">
+                    {displayedNotes.map((note, idx) => {
+                      const themeObj = CARD_THEMES.find((t) => t.id === note.theme) || CARD_THEMES[0];
+                      const likedBy = Array.isArray(note.likedBy) ? note.likedBy : [];
+                      return (
+                        <ShapedNoteCard
+                          key={note.id}
+                          note={note}
+                          themeObj={themeObj}
+                          hasLiked={likedBy.includes('local-student')}
+                          isTeacherMode={isTeacherMode}
+                          isCompactMatrix={true}
+                          isSpotlightActive={idx === spotlightIndex}
+                          isNewlyCreated={note.id === newlyCreatedId}
+                          onSelectCard={() => {
+                            setSpotlightIndex(idx);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          onToggleLike={handleToggleLike}
+                          onDelete={(id) => setDeleteConfirmId(id)}
+                          formatTime={formatTime}
+                          renderCardIcon={renderCardIcon}
+                        />
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 模式 B：全部畫面呈現 (手機單欄清楚好讀，平板2~3欄，桌面4~5欄，大屏7欄) */}
+            {viewMode === 'all' && (
+              <>
+                {displayedNotes.length === 0 ? (
+                  <div className="my-12 max-w-lg mx-auto bg-[#16291F]/95 border-2 border-[#2E4B3A] rounded-2xl p-6 sm:p-8 text-center shadow-xl font-bold">
+                    <div className="w-12 h-12 rounded-full bg-[#1F3729] border-2 border-[#385A46] flex items-center justify-center mx-auto mb-3 text-[#D4B475]">
+                      <Gift className="w-6 h-6 stroke-[2]" />
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-serif font-extrabold text-[#FAF7F2] mb-1.5">
+                      查無符合條件的祝福卡片
+                    </h3>
+                    <p className="text-xs sm:text-sm font-bold text-[#C2D4C8] leading-relaxed mb-5">
+                      嘗試清除搜尋關鍵字，或切換其他分類標籤看看吧！
+                    </p>
+                    <button
+                      onClick={() => {
+                        setSearchKeyword('');
+                        setSelectedFilterCategory('全部');
+                      }}
+                      className="px-4 py-2 rounded-xl bg-[#C5A059] hover:bg-[#D1AE68] text-[#122219] font-extrabold text-xs sm:text-sm transition inline-flex items-center gap-1.5 shadow"
+                    >
+                      <Layers className="w-4 h-4" />
+                      清空篩選條件
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    className={`grid items-stretch ${
+                      isCompactAllGrid
+                        ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-2.5 sm:gap-3.5'
+                        : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3.5 sm:gap-5'
+                    }`}
+                  >
+                    {displayedNotes.map((note) => {
+                      const themeObj = CARD_THEMES.find((t) => t.id === note.theme) || CARD_THEMES[0];
+                      const likedBy = Array.isArray(note.likedBy) ? note.likedBy : [];
+                      const hasLiked = likedBy.includes('local-student');
+
+                      return (
+                        <ShapedNoteCard
+                          key={note.id}
+                          note={note}
+                          themeObj={themeObj}
+                          hasLiked={hasLiked}
+                          isTeacherMode={isTeacherMode}
+                          isCompactMatrix={isCompactAllGrid}
+                          isNewlyCreated={note.id === newlyCreatedId}
+                          onSelectCard={(clickedNote) => setActiveLightboxNote(clickedNote)}
+                          onToggleLike={handleToggleLike}
+                          onDelete={(id) => setDeleteConfirmId(id)}
+                          formatTime={formatTime}
+                          renderCardIcon={renderCardIcon}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+          </main>
+
+          {/* 燈箱放大檢視 Modal (自適應螢幕高度與滑動) */}
+          {activeLightboxNote && (
+            <div
+              onClick={() => setActiveLightboxNote(null)}
+              className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+              role="dialog"
+              aria-modal="true"
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="max-w-xl w-full relative font-bold my-auto"
+              >
+                {/* 燈箱控制頂列 */}
+                <div className="flex items-center justify-between mb-2 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => {
+                        const curIdx = displayedNotes.findIndex((n) => n.id === activeLightboxNote.id);
+                        if (curIdx > 0) setActiveLightboxNote(displayedNotes[curIdx - 1]);
+                      }}
+                      disabled={displayedNotes.findIndex((n) => n.id === activeLightboxNote.id) === 0}
+                      className="px-2.5 py-1.5 rounded-lg bg-[#1F3729] border border-[#385A46] text-[#FAF7F2] font-extrabold flex items-center gap-1 disabled:opacity-35 min-h-[36px]"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                      <span>上一張</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        const curIdx = displayedNotes.findIndex((n) => n.id === activeLightboxNote.id);
+                        if (curIdx < displayedNotes.length - 1) setActiveLightboxNote(displayedNotes[curIdx + 1]);
+                      }}
+                      disabled={displayedNotes.findIndex((n) => n.id === activeLightboxNote.id) === displayedNotes.length - 1}
+                      className="px-2.5 py-1.5 rounded-lg bg-[#1F3729] border border-[#385A46] text-[#FAF7F2] font-extrabold flex items-center gap-1 disabled:opacity-35 min-h-[36px]"
+                    >
+                      <span>下一張</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleCopyCardText(activeLightboxNote)}
+                      className="px-2.5 py-1.5 rounded-lg bg-[#264231] border border-[#4A755B] text-[#EAC882] flex items-center gap-1 min-h-[36px]"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>複製</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveLightboxNote(null)}
+                      className="px-2.5 py-1.5 rounded-lg bg-[#1F3729] border border-[#385A46] text-[#FAF7F2] flex items-center gap-1 min-h-[36px]"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>關閉</span>
+                    </button>
+                  </div>
+                </div>
+
+                <ShapedNoteCard
+                  note={activeLightboxNote}
+                  themeObj={CARD_THEMES.find((t) => t.id === activeLightboxNote.theme) || CARD_THEMES[0]}
+                  hasLiked={
+                    Array.isArray(activeLightboxNote.likedBy) &&
+                    activeLightboxNote.likedBy.includes('local-student')
+                  }
+                  isTeacherMode={isTeacherMode}
+                  isLargeStage={true}
+                  onToggleLike={(n) => {
+                    handleToggleLike(n);
+                    setActiveLightboxNote((prev) => (prev ? { ...prev, likes: (prev.likes || 0) + 1 } : null));
+                  }}
+                  onDelete={(id) => {
+                    setActiveLightboxNote(null);
+                    setDeleteConfirmId(id);
+                  }}
+                  formatTime={formatTime}
+                  renderCardIcon={renderCardIcon}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* 手機與平板底部固定懸浮發布按鈕 (Safe Area 避讓) */}
+          <button
+            onClick={() => setIsComposerOpen(true)}
+            className="fixed bottom-5 sm:bottom-6 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:right-6 z-30 px-5 py-3 sm:py-3.5 rounded-full bg-[#C5A059] hover:bg-[#D1AE68] active:scale-95 text-[#122219] font-extrabold text-sm shadow-2xl flex items-center gap-2 border-2 border-[#FAF7F2]/70 transition min-h-[46px]"
+            style={{ bottom: 'max(1.25rem, env(safe-area-inset-bottom, 1.25rem))' }}
+          >
+            <Sparkles className="w-4 h-4 stroke-[2.5]" />
+            <span>寫一張祝福卡片</span>
+          </button>
+
+          {/* 撰寫卡片 Modal (手機分頁標籤切換預覽，不強迫超長垂直滾動) */}
+          {isComposerOpen && (
+            <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-5 overflow-y-auto">
+              <div className="bg-[#FAF7F2] text-[#2C3531] border border-[#E6DFD3] rounded-2xl max-w-4xl w-full p-4 sm:p-7 shadow-2xl relative my-auto max-h-[92vh] overflow-y-auto">
+                <button
+                  onClick={() => setIsComposerOpen(false)}
+                  className="absolute top-4 right-4 p-1.5 rounded-full text-[#6E7571] hover:bg-[#EFECE6] min-w-[36px] min-h-[36px] flex items-center justify-center"
+                  aria-label="關閉"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+
+                <div className="flex items-center gap-2 mb-3 sm:mb-5">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#1B3022] text-[#D4B475] flex items-center justify-center shadow-sm shrink-0">
+                    <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-base sm:text-xl font-serif font-extrabold text-[#1B3022]">
+                      挑選造型・寫下冬日感恩與祝福
+                    </h2>
+                    <p className="text-[11px] sm:text-xs text-[#6E7571]">
+                      自由選擇造型輪廓、色調與圖示
+                    </p>
+                  </div>
+                </div>
+
+                {/* 手機端專屬：表單 / 預覽 切換分頁標籤 */}
+                <div className="flex lg:hidden items-center bg-[#EFECE6] p-1 rounded-xl mb-3 text-xs font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setComposerMobileTab('form')}
+                    className={`flex-1 py-1.5 rounded-lg text-center transition ${
+                      composerMobileTab === 'form' ? 'bg-[#1B3022] text-[#FAF7F2] shadow' : 'text-[#5E6862]'
+                    }`}
+                  >
+                    編輯卡片內容
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setComposerMobileTab('preview')}
+                    className={`flex-1 py-1.5 rounded-lg text-center transition ${
+                      composerMobileTab === 'preview' ? 'bg-[#1B3022] text-[#FAF7F2] shadow' : 'text-[#5E6862]'
+                    }`}
+                  >
+                    即時預覽外觀
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                  {/* 表單欄位 */}
+                  <form
+                    onSubmit={handleCreateNote}
+                    className={`lg:col-span-7 space-y-3.5 ${
+                      composerMobileTab === 'preview' ? 'hidden lg:block' : 'block'
+                    }`}
+                  >
+                    {/* 1. 卡片造型 */}
+                    <div>
+                      <label className="block text-xs font-bold text-[#49534D] mb-1.5">
+                        1. 選擇卡片造型輪廓
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 sm:gap-2">
+                        {CARD_SHAPES.map((s) => {
+                          const active = selectedShape === s.id;
+                          return (
+                            <button
+                              key={s.id}
+                              type="button"
+                              onClick={() => setSelectedShape(s.id)}
+                              className={`p-2 rounded-xl border text-left transition flex items-center gap-2 min-h-[44px] ${
+                                active
+                                  ? 'bg-[#1B3022] text-[#FAF7F2] border-[#1B3022] shadow-sm'
+                                  : 'bg-white text-[#2C3531] border-[#DFD7C8] hover:bg-[#F3EFEA]'
+                              }`}
+                            >
+                              <div
+                                className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
+                                  active ? 'bg-[#284533] text-[#D4B475]' : 'bg-[#F5F0E6] text-[#5E6862]'
+                                }`}
+                              >
+                                <ShapeMiniSvg shapeId={s.id} className="w-5 h-5" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-xs font-extrabold truncate">{s.name}</div>
+                                <div className={`text-[9px] truncate ${active ? 'text-[#B4C6B9]' : 'text-[#7A827D]'}`}>
+                                  {s.desc}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* 2. 給誰 (To) 與分類 */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-bold text-[#49534D] mb-1">
+                          2. 給誰 (To)
+                        </label>
+                        <input
+                          type="text"
+                          value={toField}
+                          onChange={(e) => setToField(e.target.value)}
+                          placeholder="例如：全班同學、林老師..."
+                          maxLength={30}
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-[#D8D0C5] text-base sm:text-sm font-bold focus:outline-none focus:ring-1 focus:ring-[#C5A059]"
+                        />
+
+                        {/* 快速填入標籤 */}
+                        <div className="flex items-center gap-1.5 mt-1.5 overflow-x-auto no-scrollbar py-0.5">
+                          <span className="text-[10px] text-[#7A827D] shrink-0">快填：</span>
+                          {QUICK_RECIPIENTS.map((rec) => (
+                            <button
+                              key={rec}
+                              type="button"
+                              onClick={() => setToField(rec)}
+                              className="text-[10px] sm:text-[11px] px-2 py-1 rounded bg-[#EDE5D8] hover:bg-[#E0D4C3] text-[#141C18] font-bold shrink-0 min-h-[28px]"
+                            >
+                              {rec}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-[#49534D] mb-1">
+                          溫暖主題
+                        </label>
+                        <select
+                          value={selectedCategory}
+                          onChange={(e) => setSelectedCategory(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-[#D8D0C5] text-base sm:text-sm font-bold focus:outline-none"
+                        >
+                          {CATEGORIES.filter((c) => c !== '全部').map((cat) => (
+                            <option key={cat} value={cat}>
+                              {cat}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* 3. 祝福內容 */}
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="text-xs font-bold text-[#49534D]">
+                          3. 想說的話 (Message) <span className="text-[#8C3A3A]">*</span>
+                        </label>
+                        <span className={`text-[11px] font-bold ${messageField.length >= 200 ? 'text-[#8C3A3A]' : 'text-[#8C7A5B]'}`}>
+                          {messageField.length} / 220 字
+                        </span>
+                      </div>
+                      <textarea
+                        rows={3}
+                        required
+                        maxLength={220}
+                        value={messageField}
+                        onChange={(e) => setMessageField(e.target.value)}
+                        placeholder="寫下這學期你想感謝他的事，或是溫暖的祝福..."
+                        className="w-full p-3 rounded-xl bg-white border border-[#D8D0C5] text-base sm:text-sm font-bold leading-relaxed focus:outline-none focus:ring-1 focus:ring-[#C5A059]"
+                      />
+
+                      {/* 靈感小字條 */}
+                      <div className="mt-1">
+                        <span className="text-[10px] text-[#7A827D] block mb-0.5">寫作靈感小錦囊（點選代入）：</span>
+                        <div className="flex flex-col gap-1 max-h-24 overflow-y-auto">
+                          {INSPIRATION_PROMPTS.map((prompt, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => setMessageField(prompt)}
+                              className="text-left text-[10px] sm:text-[11px] px-2 py-1 rounded bg-[#F3EFEA] hover:bg-[#EAE4DC] text-[#4F4634] font-medium truncate min-h-[26px]"
+                            >
+                              「{prompt}」
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 4. 紙張色調 */}
+                    <div>
+                      <label className="block text-xs font-bold text-[#49534D] mb-1.5">
+                        4. 選擇卡片色調
+                      </label>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {CARD_THEMES.map((theme) => (
+                          <button
+                            key={theme.id}
+                            type="button"
+                            onClick={() => setSelectedTheme(theme.id)}
+                            className={`px-2.5 py-1.5 rounded-xl text-xs font-extrabold border flex items-center gap-1.5 min-h-[36px] ${
+                              selectedTheme === theme.id
+                                ? 'ring-2 ring-[#1B3022] border-[#1B3022]'
+                                : 'border-[#D8D0C5] opacity-75'
+                            }`}
+                            style={{
+                              backgroundColor: theme.previewBg,
+                              color: theme.id === 'midnight' ? '#FAF7F2' : '#2C3531'
+                            }}
+                          >
+                            <span className="w-2 h-2 rounded-full bg-current opacity-60" />
+                            {theme.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 5. 節慶小圖示 */}
+                    <div>
+                      <label className="block text-xs font-bold text-[#49534D] mb-1.5">
+                        5. 點綴冬日圖示
+                      </label>
+                      <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
+                        {CARD_ICONS.map((item) => {
+                          const IconComp = item.icon;
+                          const active = selectedIcon === item.id;
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onClick={() => setSelectedIcon(item.id)}
+                              title={item.name}
+                              className={`p-2 rounded-xl border flex flex-col items-center justify-center gap-0.5 min-h-[44px] ${
+                                active
+                                  ? 'bg-[#1B3022] text-[#D4B475] border-[#1B3022] shadow-sm'
+                                  : 'bg-white text-[#5E6862] border-[#E2DAD0] hover:bg-[#F3EFEA]'
+                              }`}
+                            >
+                              <IconComp className="w-4 h-4" />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* 署名與匿名開關 */}
+                    <div className="pt-2 border-t border-[#E6DFD3] flex items-center justify-between gap-2">
+                      <div className="text-xs text-[#5E6862] font-bold truncate">
+                        署名：
+                        <strong className="text-[#1B3022]">
+                          {isAnonymous
+                            ? '溫暖的匿名同學'
+                            : `${studentProfile.seatNumber ? studentProfile.seatNumber + '號 ' : ''}${
+                                studentProfile.name
+                              }`}
+                        </strong>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsAnonymous(!isAnonymous)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-extrabold flex items-center gap-1 border shrink-0 min-h-[34px] ${
+                          isAnonymous
+                            ? 'bg-[#8C3A3A]/10 border-[#8C3A3A] text-[#8C3A3A]'
+                            : 'bg-white border-[#D8D0C5] text-[#5E6862]'
+                        }`}
+                      >
+                        {isAnonymous ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        <span>{isAnonymous ? '已匿名' : '切換匿名'}</span>
+                      </button>
+                    </div>
+
+                    {/* 送出與取消 */}
+                    <div className="pt-2 flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsComposerOpen(false)}
+                        className="px-4 py-2 rounded-xl text-xs font-extrabold text-[#5E6862] hover:bg-[#EFECE6] min-h-[42px]"
+                      >
+                        取消
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="px-5 py-2 rounded-xl bg-[#1B3022] hover:bg-[#264231] active:scale-95 text-[#FAF7F2] text-xs sm:text-sm font-extrabold shadow flex items-center gap-1.5 disabled:opacity-50 min-h-[42px]"
+                      >
+                        <Send className="w-4 h-4 text-[#D4B475]" />
+                        <span>{isSubmitting ? '張貼中...' : '張貼祝福卡'}</span>
+                      </button>
+                    </div>
+                  </form>
+
+                  {/* 即時預覽卡片 */}
+                  <div
+                    className={`lg:col-span-5 bg-[#16291F] rounded-2xl p-4 sm:p-5 border border-[#2C4736] flex flex-col justify-between ${
+                      composerMobileTab === 'form' ? 'hidden lg:flex' : 'flex'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between text-xs text-[#A3B5A9] mb-2">
+                      <span className="flex items-center gap-1 font-extrabold text-[#D4B475]">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        即時預覽外觀
+                      </span>
+                      <span className="font-bold">
+                        {(CARD_SHAPES.find((s) => s.id === selectedShape) || CARD_SHAPES[0]).name}
+                      </span>
+                    </div>
+
+                    <div className="my-auto py-2">
+                      <ShapedNoteCard
+                        note={{
+                          id: 'preview',
+                          to: toField.trim() || '全班同學與師長',
+                          message:
+                            messageField.trim() ||
+                            '在這個微涼的冬日季節裡，寫下一句真摯的感謝或祝福，送給身邊陪伴你的同學與老師...',
+                          from: isAnonymous
+                            ? '溫暖的匿名同學'
+                            : `${studentProfile.seatNumber ? studentProfile.seatNumber + '號 ' : ''}${
+                                studentProfile.name
+                              }`,
+                          shape: selectedShape,
+                          theme: selectedTheme,
+                          icon: selectedIcon,
+                          category: selectedCategory,
+                          createdAt: Date.now()
+                        }}
+                        themeObj={CARD_THEMES.find((t) => t.id === selectedTheme) || CARD_THEMES[0]}
+                        hasLiked={false}
+                        isTeacherMode={false}
+                        formatTime={formatTime}
+                        renderCardIcon={renderCardIcon}
+                        isPreview={true}
+                      />
+                    </div>
+
+                    <div className="mt-3 text-center">
+                      <button
+                        type="button"
+                        onClick={() => setComposerMobileTab('form')}
+                        className="lg:hidden text-xs text-[#D4B475] underline font-bold"
+                      >
+                        返回修改內容 ↑
+                      </button>
+                      <p className="text-[10px] sm:text-[11px] text-[#8FA395] mt-1">
+                        ※ 發布至留言牆後帶有微幅手貼傾角
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 學生身分修改 Modal */}
+          {isEditingProfile && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-[#FAF7F2] text-[#2C3531] rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-[#E6DFD3] font-bold">
+                <h3 className="text-base sm:text-lg font-serif font-extrabold text-[#1B3022] mb-1">
+                  修改顯示名稱與座號
+                </h3>
+                <p className="text-xs text-[#6E7571] mb-3">
+                  新張貼的卡片將自動採用新署名
+                </p>
+                <form onSubmit={handleLoginSubmit} className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-bold text-[#49534D] mb-1">
+                      座號 (選填)
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={tempSeat}
+                      onChange={(e) => setTempSeat(e.target.value)}
+                      placeholder="例如：12"
+                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#D8D0C5] text-base sm:text-sm font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-[#49534D] mb-1">
+                      姓名或暱稱
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={tempName}
+                      onChange={(e) => setTempName(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#D8D0C5] text-base sm:text-sm font-bold"
+                    />
+                  </div>
+                  <div className="pt-2 flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditingProfile(false);
+                        setStudentProfile((prev) => ({ ...prev, hasLoggedIn: false }));
+                      }}
+                      className="text-xs text-[#8C3A3A] hover:underline"
+                    >
+                      重新登入
+                    </button>
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingProfile(false)}
+                        className="px-3.5 py-2 rounded-xl text-xs text-[#5E6862] hover:bg-[#EFECE6]"
+                      >
+                        取消
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 rounded-xl text-xs bg-[#1B3022] text-[#FAF7F2] flex items-center gap-1 font-bold"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        更新
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* 教師登入 Modal */}
+          {showTeacherModal && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-[#FAF7F2] text-[#2C3531] rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-[#E6DFD3] font-bold">
+                <div className="flex items-center gap-2 text-[#8C3A3A] mb-1.5">
+                  <Shield className="w-5 h-5" />
+                  <h3 className="text-base sm:text-lg font-serif font-extrabold text-[#1B3022]">
+                    開啟教師管理模式
+                  </h3>
+                </div>
+                <p className="text-xs text-[#5E6862] leading-relaxed mb-3">
+                  請輸入教師通行碼（預設為 <code className="bg-[#EFECE6] px-1 py-0.5 rounded font-mono">1225</code>）：
+                </p>
+                <form onSubmit={handleTeacherUnlock} className="space-y-3">
+                  <input
+                    type="password"
+                    value={teacherPasscode}
+                    onChange={(e) => setTeacherPasscode(e.target.value)}
+                    placeholder="請輸入通行碼"
+                    autoFocus
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#D8D0C5] text-base sm:text-sm font-bold focus:outline-none focus:ring-1 focus:ring-[#8C3A3A]"
+                  />
+                  <div className="flex justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowTeacherModal(false);
+                        setTeacherPasscode('');
+                      }}
+                      className="px-3.5 py-2 rounded-xl text-xs text-[#5E6862] hover:bg-[#EFECE6]"
+                    >
+                      取消
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded-xl text-xs bg-[#8C3A3A] text-white font-extrabold"
+                    >
+                      確認開啟
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* 刪除確認 Modal */}
+          {deleteConfirmId && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-[#FAF7F2] text-[#2C3531] rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-[#E6DFD3] font-bold">
+                <h3 className="text-base font-serif font-extrabold text-[#1B3022] mb-1.5">
+                  確定要移除這張祝福卡片嗎？
+                </h3>
+                <p className="text-xs text-[#5E6862] mb-4">
+                  移除後將無法復原，留言牆上的同學將不再看到這則內容。
+                </p>
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => setDeleteConfirmId(null)}
+                    className="px-3.5 py-2 rounded-xl text-xs text-[#5E6862] hover:bg-[#EFECE6]"
+                  >
+                    保留
+                  </button>
+                  <button
+                    onClick={handleConfirmDelete}
+                    className="px-4 py-2 rounded-xl text-xs bg-[#8C3A3A] text-white font-extrabold"
+                  >
+                    確認移除
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
